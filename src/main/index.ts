@@ -51,7 +51,7 @@ app.on('window-all-closed', async () => {
     // on macOS it is common for applications to stay open until the user explicitly quits
     if (process.platform !== 'darwin') {
         // TODO: See https://github.com/electron-userland/electron-webpack/issues/249
-        if (isDevelopment) { 
+        if (isDevelopment) {
             await killElectronWebpackDevServer();
         }
         app.quit();
@@ -62,11 +62,11 @@ app.on('window-all-closed', async () => {
 const killElectronWebpackDevServer = async () => {
     let ps = new shell({ executionPolicy: 'Bypass', noProfile: true });
     ps.addCommand('wmic Path win32_process Where "CommandLine Like \'%webpack-dev-server%\'" Call Terminate');
-    try { 
+    try {
         await ps.invoke();
     }
     // eslint-disable-next-line no-empty
-    catch (e) {        
+    catch (e) {
     }
 }
 

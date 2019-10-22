@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { TerminalUi } from './TerminalUi';
 
 import {
     initializeIcons,
@@ -6,6 +7,11 @@ import {
 } from 'office-ui-fabric-react';
 import { CommandBar } from 'office-ui-fabric-react/lib/CommandBar';
 import { Pivot, PivotItem } from 'office-ui-fabric-react/lib/Pivot';
+
+import { Terminal } from 'xterm';
+
+import * as pty from 'node-pty';
+import { IPty, IPtyForkOptions } from 'node-pty';
 
 const getItems = () => {
     return [
@@ -64,10 +70,92 @@ const getItems = () => {
 };
 
 export class App extends React.Component {
+    private terminals: Map<number, Terminal> = new Map<number, Terminal>();
+    private pseudoTtys: Map<number, IPty> = new Map<number, IPty>();
+    private refreshRequired: Map<number, boolean> = new Map<number, boolean>();
+
     constructor(props: any) {
         super(props);
 
+        this.setupFabricUi();
+    }
+
+    public render() {
+        return (
+            <React.Fragment>
+                <Pivot>
+                    <PivotItem
+                        id='pivotItem.Service.FlightGetComments'
+                        headerText='Service.FlightGetComments'>
+                        <CommandBar items={getItems()} />
+                        <TerminalUi
+                            id='Service.FlightGetComments'
+                            pty={this.getPseudoTtyForTab(0)}
+                            terminal={this.getTerminalForTab(0)}
+                            refreshRequired={() => this.getRefreshRequired(0)} />
+                    </PivotItem>
+                    <PivotItem
+                        id='pivotItem.Library.Testing.Database'
+                        headerText='Library.Testing.Database'>
+                        <CommandBar items={getItems()} />
+                        <TerminalUi
+                            id='Library.Testing.Database'
+                            pty={this.getPseudoTtyForTab(1)}
+                            terminal={this.getTerminalForTab(1)}
+                            refreshRequired={() => this.getRefreshRequired(1)} />
+                    </PivotItem>
+                </Pivot>
+            </React.Fragment>
+        );
+    }
+
+    private getTerminalForTab(tabIndex: number): Terminal {
+        if (this.terminals.has(tabIndex)) {
+            return this.terminals.get(tabIndex) as Terminal;
+        }
+
+        const terminalInstance = new Terminal({
+            // experimentalCharAtlas: 'dynamic',
+            fontFamily: 'Fira Code, Iosevka, monospace',
+            fontSize: 14
+        });
+
+        return terminalInstance;
+    }
+
+    private getPseudoTtyForTab(tabIndex: number): IPty {
+        if (this.pseudoTtys.has(tabIndex)) {
+            return this.pseudoTtys.get(tabIndex) as IPty;
+        }
+
+        const ptyProcess = pty.spawn('cmd.exe', '/k C:\\Apps\\cmder\\vendor\\init.bat', {
+            cols: 80,
+            experimentalUseConpty: false,
+            handleFlowControl: true,
+            rows: 25
+        } as IPtyForkOptions);
+
+        console.log('Created a new pty');
+        this.pseudoTtys.set(tabIndex, ptyProcess);
+        this.refreshRequired.set(tabIndex, false);
+
+        return ptyProcess;
+    }
+
+    private getRefreshRequired(tabIndex: number): boolean {
+        if (this.refreshRequired.has(tabIndex)) {
+            const result = this.refreshRequired.get(tabIndex) || true;
+            this.refreshRequired.set(tabIndex, true);
+            return result;
+        }
+
+        this.refreshRequired.set(tabIndex, false);
+        return false;
+    }
+
+    private setupFabricUi() {
         initializeIcons();
+
         loadTheme({
             palette: {
                 black: '#f9f9f9',
@@ -94,26 +182,5 @@ export class App extends React.Component {
                 white: '#000000',
             }
         });
-    }
-
-    public render() {
-        return (
-            <React.Fragment>
-                <Pivot>
-                    <PivotItem
-                        id='pivotItem.Service.FlightGetComments'
-                        headerText='Service.FlightGetComments'>
-                        <CommandBar items={getItems()} />
-                        <div id='terminal' style={{ backgroundColor: 'grey', height: 'calc(100vh - 118px)' }} />
-                    </PivotItem>
-                    <PivotItem
-                        id='pivotItem.Library.Testing.Database'
-                        headerText='Library.Testing.Database'>
-                        <CommandBar items={getItems()} />
-                        <div id='terminal' style={{ backgroundColor: 'pink', height: 'calc(100vh - 118px)' }} />
-                    </PivotItem>
-                </Pivot>
-            </React.Fragment>
-        );
     }
 }
