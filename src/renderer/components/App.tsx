@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TerminalUi } from './TerminalUi';
+import { TerminalUi } from '../TerminalUi';
 
 import {
     initializeIcons,
@@ -12,6 +12,7 @@ import { Terminal } from 'xterm';
 
 import * as pty from 'node-pty';
 import { IPty, IPtyForkOptions } from 'node-pty';
+import { ApplicationProps } from '../types';
 
 const getItems = () => {
     return [
@@ -69,7 +70,7 @@ const getItems = () => {
     ];
 };
 
-export class App extends React.Component {
+export class App extends React.Component<ApplicationProps> {
     private terminals: Map<number, Terminal> = new Map<number, Terminal>();
     private pseudoTtys: Map<number, IPty> = new Map<number, IPty>();
     private refreshRequired: Map<number, boolean> = new Map<number, boolean>();
@@ -109,6 +110,50 @@ export class App extends React.Component {
         );
     }
 
+    public componentDidUpdate() {
+        if (!this.props.isWatchingForChanges && !this.props.isFetchingLocal) {
+            this.props.watchForProjectChanges();
+            return;
+        }
+        if (this.props.isDeviceLocked && !this.props.acknowledgedDeviceLockEvent) {
+            this.props.acknowledgeDeviceLockEvent();
+            return;
+        }
+        if (!this.props.isMonitoringLockEvents) {
+            this.props.monitorDeviceLockEvents();
+            return;
+        }
+        if (this.props.isDeviceLocked && this.props.acknowledgedDeviceLockEvent && !this.props.refreshingOutOfDateProjectsInBackground) {
+            if (this.backgroundUpdatesEnabled && this.props.nextBackgroundProjectToRefresh != null) {
+                this.props.updateLocalProject(this.props.nextBackgroundProjectToRefresh, true, true);
+            }
+
+            return;
+        }
+        if (this.props.refreshingOutOfDateProjects && !this.props.refreshingOutOfDateProjectsInBackground &&
+            this.props.refreshingProject === null && this.props.nextProjectToRefresh !== null) {
+            this.props.updateLocalProject(this.props.nextProjectToRefresh, true, false);
+            return;
+        }
+        if (!this.props.refreshingOutOfDateProjects && this.props.refreshingOutOfDateProjectsInBackground &&
+            this.props.refreshingProject === null && this.props.nextBackgroundProjectToRefresh !== null) {
+            this.props.updateLocalProject(this.props.nextBackgroundProjectToRefresh, true, true);
+            return;
+        }
+        if (this.props.removingDeprecatedProjects && this.props.removingProject === null && this.props.nextProjectToRemove !== null) {
+            this.props.removeLocalProject(this.props.nextProjectToRemove, this.props.removingDeprecatedProjects);
+            return;
+        }
+        if (this.props.cloningNewProjects && this.props.cloningProject === null && this.props.nextProjectToClone !== null) {
+            this.props.cloneGitlabProject(this.props.nextProjectToClone, this.props.cloningNewProjects);
+            return;
+        }
+    }
+
+    private get backgroundUpdatesEnabled(): boolean {
+        return true;
+    }
+    
     private getTerminalForTab(tabIndex: number): Terminal {
         if (this.terminals.has(tabIndex)) {
             return this.terminals.get(tabIndex) as Terminal;
@@ -135,7 +180,6 @@ export class App extends React.Component {
             rows: 25
         } as IPtyForkOptions);
 
-        console.log('Created a new pty');
         this.pseudoTtys.set(tabIndex, ptyProcess);
         this.refreshRequired.set(tabIndex, false);
 

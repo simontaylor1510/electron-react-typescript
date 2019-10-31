@@ -1,0 +1,1 @@
+export const USER_DETAILS_PATH = '\\Utility.DevelopmentScripts\\UserDetails.ps1';

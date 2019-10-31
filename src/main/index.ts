@@ -1,18 +1,24 @@
 import { app, BrowserWindow } from 'electron';
+import * as fs from 'fs';
 import * as path from 'path';
 import { format as formatUrl } from 'url';
-import { Repository } from 'nodegit';
 import shell from 'node-powershell';
 
+import { ApplicationLogger } from './utils/logger';
+import { Server } from './api';
+
 const isDevelopment = process.env.NODE_ENV !== 'production';
+if (isDevelopment) {
+    app.commandLine.appendSwitch('remote-debugging-port', '9223');
+}
+
+if (!fs.existsSync('.temp')) {
+    fs.mkdirSync('.temp');
+}
 
 // global reference to mainWindow (necessary to prevent window from being garbage collected)
 let mainWindow: BrowserWindow | null = null;
-
-Repository.open('C://EJ//Application.MARE').then(repository => {
-    console.log('Opened repo');
-    console.log(repository.path());
-});
+let server: Server;
 
 function createMainWindow(): BrowserWindow {
     const window = new BrowserWindow({ webPreferences: { nodeIntegration: true } });
@@ -31,6 +37,13 @@ function createMainWindow(): BrowserWindow {
             slashes: true
         }));
     }
+
+    window.webContents.on('did-finish-load', async () => {
+        server = new Server(window.webContents);
+        await server.inititialiseAsync(true);
+        window.maximize();
+        window.show();
+    });
 
     window.on('closed', () => {
         mainWindow = null;
@@ -54,6 +67,7 @@ app.on('window-all-closed', async () => {
         if (isDevelopment) {
             await killElectronWebpackDevServer();
         }
+        server.terminate();
         app.quit();
     }
 });
@@ -80,4 +94,9 @@ app.on('activate', () => {
 // create main BrowserWindow when electron is ready
 app.on('ready', () => {
     mainWindow = createMainWindow();
+});
+
+process.on('uncaughtException', (error: Error) => {
+    // Handle the error
+    ApplicationLogger.logError(error.message, error);
 });
