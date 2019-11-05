@@ -21,7 +21,17 @@ let mainWindow: BrowserWindow | null = null;
 let server: Server;
 
 function createMainWindow(): BrowserWindow {
-    const window = new BrowserWindow({ webPreferences: { nodeIntegration: true } });
+    const window = new BrowserWindow({
+        closable: true,
+        frame: true,
+        maximizable: true,
+        minimizable: true,
+        show: false,
+        title: 'easyJet AL Developer Dashboard',
+        webPreferences: {
+            nodeIntegration: true
+        }
+    });
 
     if (isDevelopment) {
         window.webContents.openDevTools();

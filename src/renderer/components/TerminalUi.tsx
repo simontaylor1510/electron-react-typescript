@@ -4,7 +4,7 @@ import { FitAddon } from 'xterm-addon-fit';
 import { IPty } from 'node-pty';
 import { debounce } from 'lodash';
 
-import '../../node_modules/xterm/css/xterm.css';
+import '../../../node_modules/xterm/css/xterm.css';
 
 export interface TerminalProps {
     id: string;
@@ -64,7 +64,7 @@ export class TerminalUi extends React.Component<TerminalProps> {
 
     public render() {
         return (
-            <div id='terminal' style={{ backgroundColor: 'grey', height: 'calc(100vh - 118px)' }} />
+            <div id='terminal' style={{ backgroundColor: 'black', height: 'calc(100vh - 118px)' }} />
         );
     }
 

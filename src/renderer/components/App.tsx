@@ -1,10 +1,9 @@
 import * as React from 'react';
-import { TerminalUi } from '../TerminalUi';
+import { TerminalUi } from './TerminalUi';
+import { TestList } from './TestList';
 
-import {
-    initializeIcons,
-    loadTheme
-} from 'office-ui-fabric-react';
+import { initializeIcons } from 'office-ui-fabric-react/lib/Icons';
+import { loadTheme } from 'office-ui-fabric-react/lib/Styling';
 import { CommandBar } from 'office-ui-fabric-react/lib/CommandBar';
 import { Pivot, PivotItem } from 'office-ui-fabric-react/lib/Pivot';
 
@@ -85,6 +84,12 @@ export class App extends React.Component<ApplicationProps> {
         return (
             <React.Fragment>
                 <Pivot>
+                    <PivotItem
+                        id='list'
+                        headerText='List'>
+                        <CommandBar items={getItems()} />
+                        <TestList />
+                    </PivotItem>
                     <PivotItem
                         id='pivotItem.Service.FlightGetComments'
                         headerText='Service.FlightGetComments'>

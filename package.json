@@ -23,7 +23,7 @@
         "node-powershell": "^4.0.0",
         "nodegit": "^0.26.2",
         "node-pty": "0.9.0-beta26",
-        "office-ui-fabric-react": "^7.39.2",
+        "office-ui-fabric-react": "^7.57.1",
         "option-t": "^19.2.1",
         "pusher-js": "^4.4.0",
         "react": "^16.10.2",
