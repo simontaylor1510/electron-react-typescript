@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { TerminalUi } from './TerminalUi';
-import { TestList } from './TestList';
+import ProjectSelector from '../containers/ProjectSelector';
 
 import { initializeIcons } from 'office-ui-fabric-react/lib/Icons';
 import { loadTheme } from 'office-ui-fabric-react/lib/Styling';
@@ -87,8 +87,7 @@ export class App extends React.Component<ApplicationProps> {
                     <PivotItem
                         id='list'
                         headerText='List'>
-                        <CommandBar items={getItems()} />
-                        <TestList />
+                        <ProjectSelector />
                     </PivotItem>
                     <PivotItem
                         id='pivotItem.Service.FlightGetComments'

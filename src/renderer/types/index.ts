@@ -31,6 +31,7 @@ export { OutOfDateProjectsProps } from './props/outOfDateProjects';
 export { ProjectsNotOnTheMasterBranchProps } from './props/projectsNotOnTheMasterBranch';
 export { UnpushedProjectsProps } from './props/unpushedProjects';
 export { OverviewProps } from './props/overviewProps';
+export { ProjectSelectorProps } from './props/projectSelector'
 
 export { TeamCityBuild } from './teamCityBuild';
 
