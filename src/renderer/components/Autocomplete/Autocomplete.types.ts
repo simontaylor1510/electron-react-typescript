@@ -1,18 +1,18 @@
 export interface IAutocompleteProps {
-  items: ISuggestionItem[];
-  searchTitle?: string;
-  suggestionCallback: (item: ISuggestionItem) => void;
-  searchCallback: (item: string) => void;
+    items: ISuggestionItem[];
+    searchTitle?: string;
+    suggestionCallback: (item: ISuggestionItem | undefined) => void;
+    searchCallback: (item: string) => void;
 }
 export interface IAutocompleteState {
-  isSuggestionDisabled: boolean;
-  searchText: string;
-  selectedKey: number;
+    isSuggestionDisabled: boolean;
+    searchText: string;
+    selectedKey: number;
 }
 export interface ISuggestionItem {
-  key: number;
-  displayValue: string;
-  searchValue: string;
-  type?: string;
-  tag?: any;
+    key: number;
+    displayValue: string;
+    searchValue: string;
+    type?: string;
+    tag?: any;
 }

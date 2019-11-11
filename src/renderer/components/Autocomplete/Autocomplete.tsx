@@ -49,7 +49,10 @@ export class Autocomplete extends React.Component<ISearchSuggestionsProps, IAuto
           onSearch={newValue => this.onSearch(newValue)}
           onChange={(_, newSearchText) => {
             newSearchText !== undefined && newSearchText.trim() !== '' ? this.showSuggestionCallOut() : this.hideSuggestionCallOut();
-            this.setState({ searchText: newSearchText !== undefined && newSearchText.trim() !== '' ? newSearchText.trim() : '' });
+            this.setState({ searchText: newSearchText !== undefined && newSearchText.trim() !== '' ? newSearchText.trim() : '', selectedKey: -1 });
+            if (newSearchText === undefined || newSearchText.trim() === '') {
+                this.props.suggestionCallback(undefined);
+            }
           }}
         />
         {this.renderSuggestions()}
@@ -69,7 +72,7 @@ export class Autocomplete extends React.Component<ISearchSuggestionsProps, IAuto
         onDismiss={ev => this.hideSuggestionCallOut()}
         setInitialFocus={false}
         hidden={!this.state.isSuggestionDisabled}
-        calloutMaxHeight={300}
+        calloutMaxHeight={600}
         style={CalloutStyle()}
         target={this._menuButtonElement.current}
         directionalHint={5}

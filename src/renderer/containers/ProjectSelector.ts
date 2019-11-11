@@ -1,8 +1,9 @@
 import { connect } from 'react-redux';
 import { Dispatch } from 'redux';
+import { RepoSelected, OpenTerminal } from '../actions/application';
 
 import { GlobalState, ProjectSelectorProps } from '../types';
-import { TestList } from '../components/TestList';
+import { ProjectSelector } from '../components/ProjectSelector';
 
 export function mapStateToProps(state: GlobalState, _: Dispatch) {
     return {
@@ -12,10 +13,12 @@ export function mapStateToProps(state: GlobalState, _: Dispatch) {
 }
 
 const mapDispatchToProps = (dispatch: Dispatch) => ({
+    repoSelected: (repoName: string) => RepoSelected(dispatch, repoName),
+    openTerminal: () => OpenTerminal(dispatch)
 });
 
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(TestList);
+)(ProjectSelector);
 

@@ -5,7 +5,7 @@ import ProjectSelector from '../containers/ProjectSelector';
 import { initializeIcons } from 'office-ui-fabric-react/lib/Icons';
 import { loadTheme } from 'office-ui-fabric-react/lib/Styling';
 import { CommandBar } from 'office-ui-fabric-react/lib/CommandBar';
-import { Pivot, PivotItem } from 'office-ui-fabric-react/lib/Pivot';
+import { Pivot, PivotItem, IPivotItemProps } from 'office-ui-fabric-react/lib/Pivot';
 
 import { Terminal } from 'xterm';
 
@@ -69,46 +69,43 @@ const getItems = () => {
     ];
 };
 
-export class App extends React.Component<ApplicationProps> {
+interface AppState {
+    selectedTab: number
+}
+
+export class App extends React.Component<ApplicationProps, AppState> {
     private terminals: Map<number, Terminal> = new Map<number, Terminal>();
     private pseudoTtys: Map<number, IPty> = new Map<number, IPty>();
     private refreshRequired: Map<number, boolean> = new Map<number, boolean>();
+    private pivotItems: React.ReactElement<IPivotItemProps>[] = [];
 
     constructor(props: any) {
         super(props);
 
         this.setupFabricUi();
+
+        this.pivotItems.push(
+            <PivotItem
+                id='list'
+                itemKey='list'
+                key='list'
+                headerText='List'>
+                <ProjectSelector />
+            </PivotItem>
+        );
+
+        this.state = {
+            selectedTab: 0
+        } as AppState;
     }
 
     public render() {
+        const selectedKey = `${this.pivotItems[this.state.selectedTab].key || ''}`;
+
         return (
             <React.Fragment>
-                <Pivot>
-                    <PivotItem
-                        id='list'
-                        headerText='List'>
-                        <ProjectSelector />
-                    </PivotItem>
-                    <PivotItem
-                        id='pivotItem.Service.FlightGetComments'
-                        headerText='Service.FlightGetComments'>
-                        <CommandBar items={getItems()} />
-                        <TerminalUi
-                            id='Service.FlightGetComments'
-                            pty={this.getPseudoTtyForTab(0)}
-                            terminal={this.getTerminalForTab(0)}
-                            refreshRequired={() => this.getRefreshRequired(0)} />
-                    </PivotItem>
-                    <PivotItem
-                        id='pivotItem.Library.Testing.Database'
-                        headerText='Library.Testing.Database'>
-                        <CommandBar items={getItems()} />
-                        <TerminalUi
-                            id='Library.Testing.Database'
-                            pty={this.getPseudoTtyForTab(1)}
-                            terminal={this.getTerminalForTab(1)}
-                            refreshRequired={() => this.getRefreshRequired(1)} />
-                    </PivotItem>
+                <Pivot selectedKey={selectedKey} onLinkClick={(item) => this.setState({ selectedTab: (item && this.pivotItems.findIndex(pi => pi.key === item.props.itemKey) || 0) })}>
+                    {this.pivotItems}
                 </Pivot>
             </React.Fragment>
         );
@@ -152,6 +149,38 @@ export class App extends React.Component<ApplicationProps> {
             this.props.cloneGitlabProject(this.props.nextProjectToClone, this.props.cloningNewProjects);
             return;
         }
+
+        if (this.props.terminalToOpen) {
+            this.showOrAddTerminalTab(this.props.terminalToOpen);
+        }
+
+        if (this.props.selectedTerminalTab >= 0) {
+            this.setState({ selectedTab: this.props.selectedTerminalTab });
+            this.props.selectedTerminal(this.props.selectedTerminalTab);
+        }
+    }
+
+    private showOrAddTerminalTab(repoName: string): void {
+        const index = this.pivotItems.length;
+
+        this.pivotItems.push(
+            <PivotItem
+                id={`pivotItem.${repoName}`}
+                itemKey={`pivotItem.${repoName}`}
+                key={`pivotItem.${repoName}`}
+                headerText={`${repoName}`}>
+                tabIndex={this.state.selectedTab}
+                <CommandBar items={getItems()} />
+                <TerminalUi
+                    id={`terminalUi.${repoName}`}
+                    pty={this.getPseudoTtyForTab(index)}
+                    terminal={this.getTerminalForTab(index)}
+                    refreshRequired={() => this.getRefreshRequired(index)} />
+            </PivotItem>
+        );
+
+        this.props.openedTerminal(index);
+        this.props.selectTerminal(index);
     }
 
     private get backgroundUpdatesEnabled(): boolean {

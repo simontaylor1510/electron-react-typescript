@@ -4,7 +4,7 @@ import { Dispatch } from 'redux';
 import { App } from '../components/App';
 import { GlobalState } from '../types';
 import { CheckoutLocalProject, RemoveLocalProject, UpdateLocalProject, GetAllProjects } from '../actions/projects';
-import { AcknowledgeDeviceLockEvent, MonitorDeviceLockEvents, WatchForProjectChanges } from '../actions/application';
+import { AcknowledgeDeviceLockEvent, MonitorDeviceLockEvents, WatchForProjectChanges, OpenedTerminal, SelectTerminal, SelectedTerminal } from '../actions/application';
 import { GetFailedBuilds } from '../actions';
 
 export function mapStateToProps(state: GlobalState, _: Dispatch) {
@@ -26,11 +26,14 @@ export function mapStateToProps(state: GlobalState, _: Dispatch) {
         nextProjectToClone: state.projects.newProjects.nextProjectToClone,
         nextProjectToRefresh: state.projects.outOfDateProjects.nextProjectToRefresh,
         nextProjectToRemove: state.projects.deprecatedProjects.nextProjectToRemove,
+        openTerminals: state.application.openTerminals,
         refreshingOutOfDateProjects: state.projects.outOfDateProjects.refreshingOutOfDateProjects,
         refreshingOutOfDateProjectsInBackground: cancelBackground ? false : state.projects.outOfDateProjects.refreshingOutOfDateProjectsInBackground,
         refreshingProject: cancelBackground ? null : state.projects.outOfDateProjects.refreshingProject,
         removingDeprecatedProjects: state.projects.deprecatedProjects.removingDeprecatedProjects,
-        removingProject: state.projects.deprecatedProjects.removingProject
+        removingProject: state.projects.deprecatedProjects.removingProject,
+        selectedTerminalTab: state.application.selectedTerminal,
+        terminalToOpen: state.application.terminalToOpen
     };
 }
 
@@ -38,9 +41,12 @@ const mapDispatchToProps = (dispatch: Dispatch) => ({
     acknowledgeDeviceLockEvent: () => AcknowledgeDeviceLockEvent(dispatch),
     cloneGitlabProject: (url: string, cloneAll: boolean) => CheckoutLocalProject(dispatch, url, cloneAll),
     monitorDeviceLockEvents: () => MonitorDeviceLockEvents(dispatch),
+    openedTerminal: (tabIndex: number) => OpenedTerminal(dispatch, tabIndex),
     removeLocalProject: (projectDirectory: string, removeAll: boolean) => RemoveLocalProject(dispatch, projectDirectory, removeAll),
     requestAllProjects: () => GetAllProjects(dispatch),
     requestFailedBuilds: () => GetFailedBuilds(dispatch),
+    selectTerminal: (tabIndex: number) => SelectTerminal(dispatch, tabIndex),
+    selectedTerminal: (tabIndex: number) => SelectedTerminal(dispatch, tabIndex),
     updateLocalProject:
         (projectDirectory: string, updateAll: boolean, background: boolean) => UpdateLocalProject(dispatch, projectDirectory, updateAll, background),
     watchForProjectChanges: () => WatchForProjectChanges(dispatch)

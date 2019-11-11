@@ -1,5 +1,8 @@
 import * as React from 'react';
 import {
+    Button
+} from 'office-ui-fabric-react/lib/Button';
+import {
     DetailsList,
     Selection,
     SelectionMode,
@@ -15,7 +18,7 @@ interface IDocument {
     key: string
 }
 
-export class TestList extends React.Component<ProjectSelectorProps, any> {
+export class ProjectSelector extends React.Component<ProjectSelectorProps, any> {
     private _searchData: ISuggestionItem[] = [];
     private _selection: Selection;
     private _items: any[] = [
@@ -58,8 +61,8 @@ export class TestList extends React.Component<ProjectSelectorProps, any> {
             items: this._items,
             columns: this._columns,
             selectionDetails: this._getSelectionDetails(),
-            searchText: 'Banana',
-            suggestionText: 'Banana'
+            searchText: undefined,
+            suggestionText: undefined
         };
 
         this.updateSearchData();
@@ -72,11 +75,16 @@ export class TestList extends React.Component<ProjectSelectorProps, any> {
     public render() {
         return (
             <React.Fragment>
-                <Autocomplete
-                    items={this._searchData}
-                    searchCallback={item => this.searchCallback(item)}
-                    suggestionCallback={item => this.suggestionCallback(item)}
-                    searchTitle='Repository name ...' />
+                <React.Fragment>
+                    <Autocomplete
+                        items={this._searchData}
+                        searchCallback={item => this.searchCallback(item)}
+                        suggestionCallback={item => this.suggestionCallback(item)}
+                        searchTitle='Repository name ...' />
+                    <Button
+                        text='Open Terminal' style={{ float: 'right' }} disabled={!this.state.suggestionText}
+                        onClick={() => this.openTerminal()} />
+                </React.Fragment>
                 <DetailsList
                     items={this._items}
                     compact={true}
@@ -91,6 +99,10 @@ export class TestList extends React.Component<ProjectSelectorProps, any> {
                 </DetailsList>
             </React.Fragment>
         );
+    }
+
+    private openTerminal(): void {
+        this.props.openTerminal();
     }
 
     private updateSearchData() {
@@ -108,8 +120,11 @@ export class TestList extends React.Component<ProjectSelectorProps, any> {
         this.setState({ searchText: item });
     }
 
-    private suggestionCallback(item: ISuggestionItem) {
-        this.setState({ suggestionText: item.searchValue })
+    private suggestionCallback(item: ISuggestionItem | undefined) {
+        this.setState({ suggestionText: item && item.searchValue !== '' ? item.searchValue : undefined });
+        if (item && item.searchValue !== '') {
+            this.props.repoSelected(item.searchValue);
+        }
     }
 
     private _getSelectionDetails(): string {

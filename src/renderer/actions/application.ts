@@ -25,8 +25,35 @@ export interface ElectronReadyAction extends Action {
     readonly type: typeof ApplicationActionsEnum.ElectronReady;
 }
 
+export interface RepoSelectedAction extends Action {
+    readonly type: typeof ApplicationActionsEnum.RepoSelected;
+    readonly repoName: string;
+}
+
+export interface OpenTerminalAction extends Action {
+    readonly type: typeof ApplicationActionsEnum.OpenTerminal;
+    readonly repoName: string;
+}
+
+export interface OpenedTerminalAction extends Action {
+    readonly type: typeof ApplicationActionsEnum.OpenedTerminal;
+    readonly tabIndex: number;
+}
+
+export interface SelectTerminalAction extends Action {
+    readonly type: typeof ApplicationActionsEnum.SelectTerminal;
+    readonly tabIndex: number;
+}
+
+export interface SelectedTerminalAction extends Action {
+    readonly type: typeof ApplicationActionsEnum.SelectedTerminal;
+    readonly tabIndex: number;
+}
+
 export type ApplicationActions = ElectronReadyAction | WatchForProjectChangesAction |
-    MonitorDeviceLockEventsAction | ReceiveDeviceLockEventAction | AcknowledgeDeviceLockEventAction;
+    MonitorDeviceLockEventsAction | ReceiveDeviceLockEventAction | AcknowledgeDeviceLockEventAction |
+    RepoSelectedAction | OpenTerminalAction | OpenedTerminalAction |
+    SelectTerminalAction | SelectedTerminalAction;
 
 function monitorDeviceLockEvents(): MonitorDeviceLockEventsAction {
     return {
@@ -81,4 +108,58 @@ export function configureApplicationActions(dispatch: Dispatch) {
     onApiResponse(ApplicationActionsEnum.ElectronReady, () => {
         dispatch(electronReady());
     });
+}
+
+function repoSelected(repoName: string) {
+    return {
+        type: ApplicationActionsEnum.RepoSelected,
+        repoName
+    };
+}
+
+export function RepoSelected(dispatch: Dispatch, repoName: string) {
+    dispatch(repoSelected(repoName));
+}
+
+function openTerminal() {
+    return {
+        type: ApplicationActionsEnum.OpenTerminal
+    };
+}
+
+export function OpenTerminal(dispatch: Dispatch) {
+    dispatch(openTerminal());
+}
+
+function openedTerminal(tabIndex: number) {
+    return {
+        type: ApplicationActionsEnum.OpenedTerminal,
+        tabIndex
+    };
+}
+
+export function OpenedTerminal(dispatch: Dispatch, tabIndex: number) {
+    dispatch(openedTerminal(tabIndex));
+}
+
+function selectTerminal(tabIndex: number) {
+    return {
+        type: ApplicationActionsEnum.SelectTerminal,
+        tabIndex
+    };
+}
+
+export function SelectTerminal(dispatch: Dispatch, tabIndex: number) {
+    dispatch(selectTerminal(tabIndex));
+}
+
+function selectedTerminal(tabIndex: number) {
+    return {
+        type: ApplicationActionsEnum.SelectedTerminal,
+        tabIndex
+    };
+}
+
+export function SelectedTerminal(dispatch: Dispatch, tabIndex: number) {
+    dispatch(selectedTerminal(tabIndex));
 }

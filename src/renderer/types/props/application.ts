@@ -15,6 +15,8 @@ export interface ApplicationProps {
     nextBackgroundProjectToRefresh: string | null;
     nextProjectToRefresh: string | null;
     nextProjectToRemove: string | null;
+    openedTerminal: (tabIndex: number) => void;
+    openTerminals: Map<string, number>;
     refreshingOutOfDateProjects: boolean;
     refreshingOutOfDateProjectsInBackground: boolean;
     refreshingProject: string | null;
@@ -23,6 +25,10 @@ export interface ApplicationProps {
     removingProject: string | null;
     requestAllProjects: () => void;
     requestFailedBuilds: () => void;
+    selectTerminal: (tabIndex: number) => void;
+    selectedTerminal: (tabIndex: number) => void;
+    selectedTerminalTab: number;
+    terminalToOpen: string | null;
     updateLocalProject: (projectLocation: string, updateAll: boolean, background: boolean) => void;
     watchForProjectChanges: () => void;
 }
