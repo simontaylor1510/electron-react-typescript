@@ -151,7 +151,7 @@ export class App extends React.Component<ApplicationProps, AppState> {
         }
 
         if (this.props.terminalToOpen) {
-            this.showOrAddTerminalTab(this.props.terminalToOpen);
+            this.showOrAddTerminalTab(this.props.terminalToOpen, this.props.terminalToOpenDirectory);
         }
 
         if (this.props.selectedTerminalTab >= 0) {
@@ -160,7 +160,14 @@ export class App extends React.Component<ApplicationProps, AppState> {
         }
     }
 
-    private showOrAddTerminalTab(repoName: string): void {
+    private showOrAddTerminalTab(repoName: string, directory: string | null): void {
+        const existingIndex = this.pivotItems.findIndex(pi => pi.key === `pivotItem.${repoName}`);
+        if (existingIndex !== -1) {
+            this.props.openedTerminal(existingIndex);
+            this.props.selectTerminal(existingIndex);
+            return;
+        }
+
         const index = this.pivotItems.length;
 
         this.pivotItems.push(
@@ -173,7 +180,7 @@ export class App extends React.Component<ApplicationProps, AppState> {
                 <CommandBar items={getItems()} />
                 <TerminalUi
                     id={`terminalUi.${repoName}`}
-                    pty={this.getPseudoTtyForTab(index)}
+                    pty={this.getPseudoTtyForTab(index, directory)}
                     terminal={this.getTerminalForTab(index)}
                     refreshRequired={() => this.getRefreshRequired(index)} />
             </PivotItem>
@@ -201,7 +208,7 @@ export class App extends React.Component<ApplicationProps, AppState> {
         return terminalInstance;
     }
 
-    private getPseudoTtyForTab(tabIndex: number): IPty {
+    private getPseudoTtyForTab(tabIndex: number, directory: string | null): IPty {
         if (this.pseudoTtys.has(tabIndex)) {
             return this.pseudoTtys.get(tabIndex) as IPty;
         }
@@ -210,7 +217,8 @@ export class App extends React.Component<ApplicationProps, AppState> {
             cols: 80,
             experimentalUseConpty: false,
             handleFlowControl: true,
-            rows: 25
+            rows: 25,
+            cwd: directory
         } as IPtyForkOptions);
 
         this.pseudoTtys.set(tabIndex, ptyProcess);

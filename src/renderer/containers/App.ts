@@ -11,6 +11,7 @@ export function mapStateToProps(state: GlobalState, _: Dispatch) {
     const isDeviceLocked = state.application.isDeviceLocked;
     const isBackgroundRefreshing = state.projects.outOfDateProjects.refreshingOutOfDateProjectsInBackground;
     const cancelBackground = !isDeviceLocked && isBackgroundRefreshing;
+    const localProjectToOpen = state.application.terminalToOpen ? state.projects.allLocalProjects.find(lp => lp.name === state.application.terminalToOpen) : undefined;
 
     return {
         acknowledgedDeviceLockEvent: state.application.acknowledgedDeviceLockEvent,
@@ -33,7 +34,8 @@ export function mapStateToProps(state: GlobalState, _: Dispatch) {
         removingDeprecatedProjects: state.projects.deprecatedProjects.removingDeprecatedProjects,
         removingProject: state.projects.deprecatedProjects.removingProject,
         selectedTerminalTab: state.application.selectedTerminal,
-        terminalToOpen: state.application.terminalToOpen
+        terminalToOpen: state.application.terminalToOpen,
+        terminalToOpenDirectory: localProjectToOpen ? `${state.settings.userDetails.homeFolder}/${localProjectToOpen.directoryName}` : null
     };
 }
 

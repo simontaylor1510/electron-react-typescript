@@ -8,7 +8,8 @@ import { ProjectSelector } from '../components/ProjectSelector';
 export function mapStateToProps(state: GlobalState, _: Dispatch) {
     return {
         allProjects: state.projects.allProjects,
-        allLocalProjects: state.projects.allLocalProjects
+        allLocalProjects: state.projects.allLocalProjects,
+        openTerminals: state.application.openTerminals
     } as ProjectSelectorProps;
 }
 

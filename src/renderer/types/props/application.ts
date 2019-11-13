@@ -29,6 +29,7 @@ export interface ApplicationProps {
     selectedTerminal: (tabIndex: number) => void;
     selectedTerminalTab: number;
     terminalToOpen: string | null;
+    terminalToOpenDirectory: string |  null;
     updateLocalProject: (projectLocation: string, updateAll: boolean, background: boolean) => void;
     watchForProjectChanges: () => void;
 }

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {
-    Button
+    PrimaryButton
 } from 'office-ui-fabric-react/lib/Button';
 import {
     DetailsList,
@@ -13,26 +13,23 @@ import { Autocomplete, ISuggestionItem } from './Autocomplete';
 import { ProjectSelectorProps, Project } from '../types';
 
 interface IDocument {
-    project: string;
     details: string;
     key: string
+    project: string;
 }
 
-export class ProjectSelector extends React.Component<ProjectSelectorProps, any> {
+interface IProjectSelectorState {
+    columns: IColumn[];
+    items: IDocument[];
+    searchText: string | undefined;
+    selectionDetails: string;
+    suggestionText: string | undefined;
+}
+
+export class ProjectSelector extends React.Component<ProjectSelectorProps, IProjectSelectorState> {
     private _searchData: ISuggestionItem[] = [];
     private _selection: Selection;
-    private _items: any[] = [
-        {
-            project: 'Library.Testing.Database',
-            details: 'Stuff',
-            key: '1'
-        } as IDocument,
-        {
-            project: 'Library.Testing.Database.ejFlight',
-            details: 'Stuff',
-            key: '2'
-        } as IDocument
-    ];
+    private _items: IDocument[] = [];
     private _columns: IColumn[] = [
         {
             name: 'Repository',
@@ -58,17 +55,18 @@ export class ProjectSelector extends React.Component<ProjectSelectorProps, any> 
         });
 
         this.state = {
-            items: this._items,
             columns: this._columns,
             selectionDetails: this._getSelectionDetails(),
             searchText: undefined,
             suggestionText: undefined
-        };
+        } as IProjectSelectorState;
 
+        this.updateItems();
         this.updateSearchData();
     }
 
     public componentDidUpdate() {
+        this.updateItems();
         this.updateSearchData();
     }
 
@@ -81,7 +79,7 @@ export class ProjectSelector extends React.Component<ProjectSelectorProps, any> 
                         searchCallback={item => this.searchCallback(item)}
                         suggestionCallback={item => this.suggestionCallback(item)}
                         searchTitle='Repository name ...' />
-                    <Button
+                    <PrimaryButton
                         text='Open Terminal' style={{ float: 'right' }} disabled={!this.state.suggestionText}
                         onClick={() => this.openTerminal()} />
                 </React.Fragment>
@@ -99,6 +97,19 @@ export class ProjectSelector extends React.Component<ProjectSelectorProps, any> 
                 </DetailsList>
             </React.Fragment>
         );
+    }
+
+    private updateItems(): void {
+        const items: IDocument[] = [];
+
+        this.props.openTerminals.forEach((value, key) => {
+            items.push({
+                key,
+                project: key
+            } as IDocument);
+        })
+
+        this._items = items;
     }
 
     private openTerminal(): void {
