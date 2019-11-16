@@ -1,6 +1,7 @@
 export interface ApplicationState {
     acknowledgedDeviceLockEvent: boolean;
     activeTabIndex: number;
+    closingTerminal: string | null;
     isMonitoringLockEvents: boolean;
     isDeviceLocked: boolean;
     isWatchingForChanges: boolean;

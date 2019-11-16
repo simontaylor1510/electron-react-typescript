@@ -5,12 +5,15 @@ import {
     ApplicationActions,
     RepoSelectedAction,
     OpenedTerminalAction,
-    SelectTerminalAction
+    SelectTerminalAction,
+    CloseTerminalAction,
+    ClosedTerminalAction
 } from '../actions/application';
 
 const initialState: ApplicationState = {
     acknowledgedDeviceLockEvent: false,
     activeTabIndex: 0,
+    closingTerminal: null,
     isDeviceLocked: false,
     isMonitoringLockEvents: false,
     isWatchingForChanges: false,
@@ -84,7 +87,25 @@ export function application(state: ApplicationState = initialState, action: Appl
                 ...state,
                 selectedTerminal: -1
             };
+
+        case ApplicationActionsEnum.CloseTerminal:
+            return {
+                ...state,
+                closingTerminal: (action as CloseTerminalAction).id
+            };
     
+        case ApplicationActionsEnum.ClosedTerminal:
+            const closed = (action as ClosedTerminalAction).id;
+            const modifiedList = state.openTerminals;            
+            if (state.openTerminals.has(closed)) {
+                modifiedList.delete(closed);
+            }
+            
+            return {
+                ...state,
+                closingTerminal: null
+            };
+        
         default:
             return state;
     }

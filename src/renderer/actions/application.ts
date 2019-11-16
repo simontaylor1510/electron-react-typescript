@@ -50,10 +50,21 @@ export interface SelectedTerminalAction extends Action {
     readonly tabIndex: number;
 }
 
+export interface CloseTerminalAction extends Action {
+    readonly type: typeof ApplicationActionsEnum.CloseTerminal;
+    readonly id: string;
+}
+
+export interface ClosedTerminalAction extends Action {
+    readonly type: typeof ApplicationActionsEnum.ClosedTerminal;
+    readonly id: string;
+}
+
 export type ApplicationActions = ElectronReadyAction | WatchForProjectChangesAction |
     MonitorDeviceLockEventsAction | ReceiveDeviceLockEventAction | AcknowledgeDeviceLockEventAction |
     RepoSelectedAction | OpenTerminalAction | OpenedTerminalAction |
-    SelectTerminalAction | SelectedTerminalAction;
+    SelectTerminalAction | SelectedTerminalAction |
+    CloseTerminalAction | ClosedTerminalAction;
 
 function monitorDeviceLockEvents(): MonitorDeviceLockEventsAction {
     return {
@@ -162,4 +173,26 @@ function selectedTerminal(tabIndex: number) {
 
 export function SelectedTerminal(dispatch: Dispatch, tabIndex: number) {
     dispatch(selectedTerminal(tabIndex));
+}
+
+function closeTerminal(id: string) {
+    return {
+        type: ApplicationActionsEnum.CloseTerminal,
+        id
+    };
+}
+
+export function CloseTerminal(dispatch: Dispatch, id: string) {
+    dispatch(closeTerminal(id));
+}
+
+function closedTerminal(id: string) {
+    return {
+        type: ApplicationActionsEnum.ClosedTerminal,
+        id
+    };
+}
+
+export function ClosedTerminal(dispatch: Dispatch, id: string) {
+    dispatch(closedTerminal(id));
 }

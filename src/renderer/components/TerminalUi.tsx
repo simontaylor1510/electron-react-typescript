@@ -11,6 +11,7 @@ export interface TerminalProps {
     terminal: Terminal;
     pty: IPty;
     refreshRequired: () => boolean;
+    closeTerminal: (id: string) => void;
 }
 
 export class TerminalUi extends React.Component<TerminalProps> {
@@ -163,6 +164,7 @@ export class TerminalUi extends React.Component<TerminalProps> {
         this.disconnectPtyEventHandlers();
         if (this.terminalInstance) {
             this.terminalInstance.write(`\r\n\r\npty process exited with exitCode: ${e.exitCode}`);
+            this.props.closeTerminal(this.props.id);
         }
     }
 

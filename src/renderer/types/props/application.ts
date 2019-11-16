@@ -5,6 +5,9 @@ export interface ApplicationProps {
     cloneGitlabProject: (url: string, cloneAll: boolean) => void;
     cloningNewProjects: boolean;
     cloningProject: string | null;
+    closeTerminal: (id: string) => void;
+    closedTerminal: (id: string) => void;
+    closingTerminal: string | null;
     isDeviceLocked: boolean;
     isFetchingLocal: boolean;
     isMonitoringLockEvents: boolean;

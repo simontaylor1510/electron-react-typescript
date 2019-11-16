@@ -74,9 +74,9 @@ interface AppState {
 }
 
 export class App extends React.Component<ApplicationProps, AppState> {
-    private terminals: Map<number, Terminal> = new Map<number, Terminal>();
-    private pseudoTtys: Map<number, IPty> = new Map<number, IPty>();
-    private refreshRequired: Map<number, boolean> = new Map<number, boolean>();
+    private terminals: Map<string, Terminal> = new Map<string, Terminal>();
+    private pseudoTtys: Map<string, IPty> = new Map<string, IPty>();
+    private refreshRequired: Map<string, boolean> = new Map<string, boolean>();
     private pivotItems: React.ReactElement<IPivotItemProps>[] = [];
 
     constructor(props: any) {
@@ -90,6 +90,7 @@ export class App extends React.Component<ApplicationProps, AppState> {
                 itemKey='list'
                 key='list'
                 headerText='List'>
+                <CommandBar items={getItems()} />
                 <ProjectSelector />
             </PivotItem>
         );
@@ -158,6 +159,15 @@ export class App extends React.Component<ApplicationProps, AppState> {
             this.setState({ selectedTab: this.props.selectedTerminalTab });
             this.props.selectedTerminal(this.props.selectedTerminalTab);
         }
+
+        if (this.props.closingTerminal) {
+            const pivotItemIndex = this.pivotItems.findIndex(pi => pi.key === `pivotItem.${this.props.closingTerminal}`);
+            if (pivotItemIndex >= 0) {
+                this.pivotItems.splice(pivotItemIndex, 1);
+                this.setState({ selectedTab: this.state.selectedTab - 1 });
+            }
+            this.props.closedTerminal(this.props.closingTerminal);
+        }
     }
 
     private showOrAddTerminalTab(repoName: string, directory: string | null): void {
@@ -176,13 +186,12 @@ export class App extends React.Component<ApplicationProps, AppState> {
                 itemKey={`pivotItem.${repoName}`}
                 key={`pivotItem.${repoName}`}
                 headerText={`${repoName}`}>
-                tabIndex={this.state.selectedTab}
-                <CommandBar items={getItems()} />
                 <TerminalUi
-                    id={`terminalUi.${repoName}`}
-                    pty={this.getPseudoTtyForTab(index, directory)}
-                    terminal={this.getTerminalForTab(index)}
-                    refreshRequired={() => this.getRefreshRequired(index)} />
+                    id={repoName}
+                    pty={this.getPseudoTtyForTab(repoName, directory)}
+                    terminal={this.getTerminalForTab(repoName)}
+                    refreshRequired={() => this.getRefreshRequired(repoName)}
+                    closeTerminal={this.props.closeTerminal} />
             </PivotItem>
         );
 
@@ -194,9 +203,9 @@ export class App extends React.Component<ApplicationProps, AppState> {
         return true;
     }
     
-    private getTerminalForTab(tabIndex: number): Terminal {
-        if (this.terminals.has(tabIndex)) {
-            return this.terminals.get(tabIndex) as Terminal;
+    private getTerminalForTab(repoName: string): Terminal {
+        if (this.terminals.has(repoName)) {
+            return this.terminals.get(repoName) as Terminal;
         }
 
         const terminalInstance = new Terminal({
@@ -208,9 +217,9 @@ export class App extends React.Component<ApplicationProps, AppState> {
         return terminalInstance;
     }
 
-    private getPseudoTtyForTab(tabIndex: number, directory: string | null): IPty {
-        if (this.pseudoTtys.has(tabIndex)) {
-            return this.pseudoTtys.get(tabIndex) as IPty;
+    private getPseudoTtyForTab(repoName: string, directory: string | null): IPty {
+        if (this.pseudoTtys.has(repoName)) {
+            return this.pseudoTtys.get(repoName) as IPty;
         }
 
         const ptyProcess = pty.spawn('cmd.exe', '/k C:\\Apps\\cmder\\vendor\\init.bat', {
@@ -221,20 +230,20 @@ export class App extends React.Component<ApplicationProps, AppState> {
             cwd: directory
         } as IPtyForkOptions);
 
-        this.pseudoTtys.set(tabIndex, ptyProcess);
-        this.refreshRequired.set(tabIndex, false);
+        this.pseudoTtys.set(repoName, ptyProcess);
+        this.refreshRequired.set(repoName, false);
 
         return ptyProcess;
     }
 
-    private getRefreshRequired(tabIndex: number): boolean {
-        if (this.refreshRequired.has(tabIndex)) {
-            const result = this.refreshRequired.get(tabIndex) || true;
-            this.refreshRequired.set(tabIndex, true);
+    private getRefreshRequired(repoName: string): boolean {
+        if (this.refreshRequired.has(repoName)) {
+            const result = this.refreshRequired.get(repoName) || true;
+            this.refreshRequired.set(repoName, true);
             return result;
         }
 
-        this.refreshRequired.set(tabIndex, false);
+        this.refreshRequired.set(repoName, false);
         return false;
     }
 

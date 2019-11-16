@@ -7,6 +7,8 @@ export enum ApplicationActionsEnum {
     RepoSelected = 'application/REPO_SELECTED',
     OpenTerminal = 'application/OPEN_TERMINAL',
     OpenedTerminal = 'application/OPENED_TERMINAL',
+    CloseTerminal = 'application/CLOSE_TERMINAL',
+    ClosedTerminal = 'application/CLOSED_TERMINAL',
     SelectTerminal = 'application/SELECT_TERMINAL',
     SelectedTerminal = 'application/SELECTED_TERMINAL'
 }

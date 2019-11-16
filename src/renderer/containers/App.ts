@@ -4,7 +4,16 @@ import { Dispatch } from 'redux';
 import { App } from '../components/App';
 import { GlobalState } from '../types';
 import { CheckoutLocalProject, RemoveLocalProject, UpdateLocalProject, GetAllProjects } from '../actions/projects';
-import { AcknowledgeDeviceLockEvent, MonitorDeviceLockEvents, WatchForProjectChanges, OpenedTerminal, SelectTerminal, SelectedTerminal } from '../actions/application';
+import {
+    AcknowledgeDeviceLockEvent,
+    MonitorDeviceLockEvents,
+    WatchForProjectChanges,
+    OpenedTerminal,
+    SelectTerminal,
+    SelectedTerminal,
+    CloseTerminal,
+    ClosedTerminal
+} from '../actions/application';
 import { GetFailedBuilds } from '../actions';
 
 export function mapStateToProps(state: GlobalState, _: Dispatch) {
@@ -18,6 +27,7 @@ export function mapStateToProps(state: GlobalState, _: Dispatch) {
         activeTabIndex: state.application.activeTabIndex,
         cloningNewProjects: state.projects.newProjects.cloningNewProjects,
         cloningProject: state.projects.newProjects.cloningProject,
+        closingTerminal: state.application.closingTerminal,
         isDeviceLocked: state.application.isDeviceLocked,
         isFetchingLocal: state.projects.isFetchingLocal,
         isMonitoringLockEvents: state.application.isMonitoringLockEvents,
@@ -42,6 +52,8 @@ export function mapStateToProps(state: GlobalState, _: Dispatch) {
 const mapDispatchToProps = (dispatch: Dispatch) => ({
     acknowledgeDeviceLockEvent: () => AcknowledgeDeviceLockEvent(dispatch),
     cloneGitlabProject: (url: string, cloneAll: boolean) => CheckoutLocalProject(dispatch, url, cloneAll),
+    closeTerminal: (id: string) => CloseTerminal(dispatch, id),
+    closedTerminal: (id: string) => ClosedTerminal(dispatch, id),
     monitorDeviceLockEvents: () => MonitorDeviceLockEvents(dispatch),
     openedTerminal: (tabIndex: number) => OpenedTerminal(dispatch, tabIndex),
     removeLocalProject: (projectDirectory: string, removeAll: boolean) => RemoveLocalProject(dispatch, projectDirectory, removeAll),
