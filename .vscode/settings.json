@@ -1,0 +1,10 @@
+{
+ "logViewer.watch": [
+  {
+   "pattern": "al-developer-dashboard.log"
+  }
+ ],
+ "logViewer.options": {
+  "fileCheckInterval": 250
+ }
+}
