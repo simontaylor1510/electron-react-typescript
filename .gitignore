@@ -65,3 +65,8 @@ ts-gen
 
 # Used to accelerate CI builds
 .depshash
+
+# Application specific
+
+# Ignore files that are output by the application for debugging
+.temp
