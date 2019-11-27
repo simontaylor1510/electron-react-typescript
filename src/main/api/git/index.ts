@@ -170,7 +170,8 @@ export class GitFunctions {
             async (payload: { directoryName: string, updateAll: boolean, background: boolean }): Promise<[string, any]> => {
                 await this.gitProjectsWatcher.SetDirectoryIgnoredState(payload.directoryName, true);
                 try {
-                    const localProject = await this.gitProjects.UpdateRepository(payload.directoryName);
+                    // const localProject = await this.gitProjects.UpdateRepository(payload.directoryName);
+                    const localProject = this.gitProjects.LocalProjects.get(payload.directoryName) || {} as LocalProject;
                     this.gitProjectsWatcher.LocalProjects = this.gitProjects.LocalProjects;
                     await this.gitProjectsWatcher.SetDirectoryIgnoredState(payload.directoryName, false);
 

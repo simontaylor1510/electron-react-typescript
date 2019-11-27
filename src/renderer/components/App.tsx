@@ -12,6 +12,7 @@ import { Terminal } from 'xterm';
 import * as pty from 'node-pty';
 import { IPty, IPtyForkOptions } from 'node-pty';
 import { ApplicationProps } from '../types';
+import { ApplicationLogger } from '../../main/utils/logger';
 
 const getItems = () => {
     return [
@@ -100,6 +101,14 @@ export class App extends React.Component<ApplicationProps, AppState> {
         } as AppState;
     }
 
+    public componentDidMount() {
+        window.addEventListener('online', this.handleOnlineStatusChanged);
+        window.addEventListener('offline', this.handleOnlineStatusChanged);
+        window.addEventListener('resize', this.handleOnlineStatusChanged);
+
+        this.handleOnlineStatusChanged();
+    }
+
     public render() {
         const selectedKey = `${this.pivotItems[this.state.selectedTab].key || ''}`;
 
@@ -170,6 +179,10 @@ export class App extends React.Component<ApplicationProps, AppState> {
         }
     }
 
+    private handleOnlineStatusChanged(): void {
+        ApplicationLogger.logInfo(`Application online status changed to ${navigator.onLine}`);
+    }
+
     private showOrAddTerminalTab(repoName: string, directory: string | null): void {
         const existingIndex = this.pivotItems.findIndex(pi => pi.key === `pivotItem.${repoName}`);
         if (existingIndex !== -1) {
@@ -200,7 +213,7 @@ export class App extends React.Component<ApplicationProps, AppState> {
     }
 
     private get backgroundUpdatesEnabled(): boolean {
-        return true;
+        return false;
     }
     
     private getTerminalForTab(repoName: string): Terminal {

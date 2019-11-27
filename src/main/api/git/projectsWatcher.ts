@@ -76,38 +76,8 @@ export class ProjectsWatcher {
                 const projectDirectory = filename.substring(0, index);
                 if (!this.ignoredFolders.has(projectDirectory)) {
                     if (this.projectFolders.has(projectDirectory)) {
-                        //             const repo = await Repository.open(`${this.appSettings.rootFolder}\\${projectDirectory}`);
-                        //             const subFolderIndex = filename.indexOf('\\', index + 1);
-                        //             let gitIgnored = false;
-                        //             let inSubmodule = false;
-                        //             if (subFolderIndex !== -1) {
-                        //                 const subFolder = filename.substring(index + 1, subFolderIndex);
-                        //                 if ((await repo.getSubmoduleNames()).filter(smn => smn === subFolder).length === 1) {
-                        //                     repo.free();
-                        //                     inSubmodule = true;
-// tslint:disable-next-line: max-line-length
-                        //                     const subModuleRepo = await Repository.open(`${this.appSettings.rootFolder}\\${projectDirectory}\\${subFolder}`);
-                        //                     const filenameToCheck = filename.substring(projectDirectory.length + 1 + subFolder.length + 1);
-                        //                     gitIgnored = (await Ignore.pathIsIgnored(subModuleRepo, filenameToCheck) === 0);
-                        //                     subModuleRepo.free();
-                        //                 }
-                        //             }
-                        //             if (!inSubmodule) {
-                        //                 const filenameToCheck = filename.substring(projectDirectory.length + 1);
-                        //                 gitIgnored = (await Ignore.pathIsIgnored(repo, filenameToCheck) === 0);
-                        //                 repo.free();
-                        //             }
-                        //             if (!gitIgnored) {
-                        //                 await this.LogStatusMessage(`TRIGGERED - (${fileEvent}): ${filename})`);
                         this.changedProjects.set(projectDirectory, new Date());
-                        //             // } else {
-                        //             //     await this.LogStatusMessage(`GITIGNORED - (${fileEvent}): ${filename}`);
-                        //             }
-                        //         // } else {
-                        //         //     await this.LogStatusMessage(`UNKNOWN - (${fileEvent}): ${filename}`);
                     }
-                    // } else {
-                    //     await this.LogStatusMessage(`IGNORED - (${fileEvent}): ${filename}`);
                 }
             } else if (index >= 0 && (filename.indexOf('\\.git') !== -1 || !filename.endsWith('\\.git'))) {
                 const projectDirectory = filename.substring(0, index);
@@ -116,8 +86,6 @@ export class ProjectsWatcher {
                         && !filename.endsWith('.lock')) {
                         await this.LogStatusMessage(`Index HAS changed - ${filename}`);
                         this.changedProjects.set(projectDirectory, new Date());
-                    } else {
-                        await this.LogStatusMessage(`GITFILE - (${fileEvent}): ${filename}`);
                     }
                 }
             }

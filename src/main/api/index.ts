@@ -10,7 +10,7 @@ import { ApplicationLogger } from '../utils/logger';
 import { LocalProjectsPersistence } from './persistence/localProjects';
 import { ServerProjectsPersistence } from './persistence/gitlabProjects';
 import { ProjectsActionsEnum } from '../../renderer/actions/projectEnums';
-import { IpcPayload } from '../../renderer/types';
+import { IpcPayload, LocalProject, Project } from '../../renderer/types';
 import { LocalProjectStatusResult } from '../../renderer/types/localProjectStatus';
 import { UserSettings } from './userSettings';
 import { ApplicationActionsEnum, BuildsActionsEnum, SettingsActionsEnum } from '../../renderer/actions';
@@ -51,7 +51,16 @@ export class Server {
     private userSettings = {} as UserSettings;
 
     private userDataFolder: string = app.getPath('userData');
+
     private homeFolder: string = app.getPath('home');
+
+    private localProjects: LocalProject[] = [];
+
+    private toUpdate: LocalProject[] = [];
+
+    private remoteProjects: Project[] = [];
+
+    private isLocked: boolean = false;
 
     private isOnline: boolean = true;
 
@@ -237,8 +246,64 @@ export class Server {
                     }
                 }
                 break;
+
+            case ProjectsActionsEnum.ReceiveAllLocalProjects:
+                this.localProjects = responsePayload as LocalProject[];
+                this.mergeLocalAndRemoteProjects();
+                break;
+
+            case ProjectsActionsEnum.ReceiveAllProjects:
+                this.remoteProjects = responsePayload as Project[];
+                this.mergeLocalAndRemoteProjects();
+                break;
+
+            case ApplicationActionsEnum.ReceiveDeviceLockEvent:
+                ApplicationLogger.logInfo(`Device ${responsePayload ? 'is' : 'is not'} locked`);
+                this.isLocked = responsePayload;
+                if (this.isLocked) {
+                    this.updateOutOfDateProjects();
+                }
+                break;
         }
 
         this.reactClient.send(responseName, responsePayload);
+    }
+
+    private async updateOutOfDateProjects(): Promise<void> {
+        const method = this.apiMethods.get(ProjectsActionsEnum.UpdateLocalProject);
+
+        if (method) {
+            while (this.toUpdate.length !== 0 && this.isLocked) {
+                const localProject = this.toUpdate.splice(0, 1)[0];
+                ApplicationLogger.logInfo(`Updating ${localProject.name}`);
+                //await method({ directoryName: localProject.name, updateAll: false, background: false });
+                ApplicationLogger.logInfo(`Updated ${localProject.name}`);
+            }
+            ApplicationLogger.logInfo('All projects updated');
+        }
+    }
+
+    private mergeLocalAndRemoteProjects(): void {
+        if (this.localProjects.length === 0 || this.remoteProjects.length === 0) {
+            ApplicationLogger.logInfo(`Haven't got both local and remote projects`);
+            return;
+        }
+
+        this.toUpdate = [];
+
+        this.localProjects.forEach(localProject => {
+            const remoteProject = this.remoteProjects.find(remoteProject => remoteProject.name === localProject.name);
+            if (remoteProject) {
+                if (remoteProject.last_commit.id !== localProject.commitSha) {
+                    localProject.lastServerCommit = remoteProject.last_commit;
+                    localProject.unpulledRemoteCommits = !localProject.localCommits.includes(remoteProject.last_commit.id);
+                    if (localProject.unpulledRemoteCommits) {
+                        this.toUpdate.push(localProject);
+                    }
+                }
+            }
+        });
+
+        ApplicationLogger.logInfo(`There are ${this.toUpdate.length} projects that need to be updated`);
     }
 }
