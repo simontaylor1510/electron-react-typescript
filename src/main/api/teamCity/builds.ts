@@ -8,7 +8,6 @@ import { EmailNotificationsListener } from '../system/emailNotificationsListener
 import { ApplicationLogger } from '../../utils/logger';
 import { BuildsActionsEnum } from '../../../renderer/actions';
 import { TeamCityApiClient } from './shared';
-import { EventEmitter } from 'events';
 
 // (STARTED) (Service.PassengerStandbyStatusUpdated.PerformanceTests) (Perf Test) (0.0.0-alpha)
 const teamCityBuildRegexp1 = /\[TeamCity, (.+)\] Build EJ\.AbstractionLayer :: .+ :: (.+) :: (.+) #(\S+)/;
@@ -18,13 +17,12 @@ const teamCityDeployRegexp = /\[TeamCity, (\S+)\] Build EJ\.AbstractionLayer :: 
 let failedBuilds: TeamCityBuild[] = [];
 let unseenCount: number = 0;
 
-export class TeamCityBuilds extends EventEmitter {
+export class TeamCityBuilds {
     private teamCityApiClient: TeamCityApiClient;
     private responseSender!: (responseName: string, payload: any) => void;
     private emailNotificationsListener!: EmailNotificationsListener;
 
     constructor(teamCityApiClient: TeamCityApiClient) {
-        super();
         this.teamCityApiClient = teamCityApiClient;
     }
 
