@@ -3,11 +3,12 @@ import { writeFile } from 'jsonfile';
 import { TeamCityBuild } from '../../../renderer/types';
 import { IGNORED_BUILDS } from './constants';
 
-import { listenForEmails } from '../system/emailNotificationsListener';
+import { EmailNotificationsListener } from '../system/emailNotificationsListener';
 
 import { ApplicationLogger } from '../../utils/logger';
 import { BuildsActionsEnum } from '../../../renderer/actions';
 import { TeamCityApiClient } from './shared';
+import { EventEmitter } from 'events';
 
 // (STARTED) (Service.PassengerStandbyStatusUpdated.PerformanceTests) (Perf Test) (0.0.0-alpha)
 const teamCityBuildRegexp1 = /\[TeamCity, (.+)\] Build EJ\.AbstractionLayer :: .+ :: (.+) :: (.+) #(\S+)/;
@@ -17,10 +18,13 @@ const teamCityDeployRegexp = /\[TeamCity, (\S+)\] Build EJ\.AbstractionLayer :: 
 let failedBuilds: TeamCityBuild[] = [];
 let unseenCount: number = 0;
 
-export class TeamCityBuilds {
+export class TeamCityBuilds extends EventEmitter {
     private teamCityApiClient: TeamCityApiClient;
+    private responseSender!: (responseName: string, payload: any) => void;
+    private emailNotificationsListener!: EmailNotificationsListener;
 
     constructor(teamCityApiClient: TeamCityApiClient) {
+        super();
         this.teamCityApiClient = teamCityApiClient;
     }
 
@@ -37,62 +41,79 @@ export class TeamCityBuilds {
     }
 
     public listenForBuildEvents(responseSender: (responseName: string, payload: any) => void): void {
-        listenForEmails('teamcity.to.slack.bjss@gmail.com', 'bnikmcuwlnreqfyi', ['tooling.team@easyjet.com'], (subject) => {
-            let matches = teamCityDeployRegexp.exec(subject);
-            if (matches !== null && matches.length === 3) {
-                return;
-            }
+        this.responseSender = responseSender;
 
-            matches = teamCityBuildRegexp1.exec(subject);
-            if (matches === null || matches.length !== 5) {
-                matches = teamCityBuildRegexp2.exec(subject);
-                if (matches === null || matches.length !== 5) {
-                    ApplicationLogger.logInfo(`Unexpected email subject: "${subject}"`);
-                }
-            }
+        this.emailNotificationsListener = new EmailNotificationsListener(
+            'teamcity.to.slack.bjss@gmail.com',
+            'bnikmcuwlnreqfyi',
+            ['tooling.team@easyjet.com'],
+            this.receivedEmailCallback);
 
-            let refreshRequired = false;
-            if (matches !== null && matches.length === 5) {
-                const serviceName = matches[2];
-                const reasonAndType = this.generateFailureReason(matches[3], matches[1]);
-
-                if (matches[1] === 'SUCCESSFUL' && matches[2] !== null) {
-                    const count = failedBuilds.length;
-                    failedBuilds = failedBuilds.filter(fb => fb.serviceName !== serviceName || fb.type !== reasonAndType[2]);
-                    if (failedBuilds.length !== count) {
-                        refreshRequired = true;
-                    }
-                } else if (matches[1] === 'FAILED' && matches[2] !== null) {
-                    const failedBuild = {
-                        buildId: matches[4],
-                        buildName: matches[3],
-                        buildNumber: matches[4],
-                        displayName: `${serviceName}${matches[3] ? ` - ${matches[3]}` : ''}`,
-                        finishTime: new Date().getTime(),
-                        sequence: reasonAndType[1],
-                        serviceName,
-                        status: 'FAILED',
-                        type: reasonAndType[2]
-                    } as TeamCityBuild;
-
-                    if (!failedBuilds.find(fb => fb.serviceName === serviceName)) {
-                        failedBuilds.push(failedBuild);
-                        refreshRequired = true;
-                    } else {
-                        failedBuilds = failedBuilds.filter(fb => fb.serviceName !== serviceName || fb.type !== reasonAndType[2]);
-                        failedBuilds.push(failedBuild);
-                        refreshRequired = true;
-                    }
-                }
-            }
-
-            if (refreshRequired) {
-                unseenCount++;
-                failedBuilds = this.cleanFailedBuilds();
-                responseSender(BuildsActionsEnum.FailedBuildsResult, failedBuilds);
-                responseSender(BuildsActionsEnum.UnseenCountUpdated, unseenCount);
-            }
+        this.emailNotificationsListener.on('connected', () => {
+            ApplicationLogger.logInfo('Connected to TeamCity notification emails');
+            this.responseSender('TeamCityNotifications', 'connected');
         });
+        this.emailNotificationsListener.on('disconnected', () => {
+            ApplicationLogger.logInfo('Disconnected from TeamCity notification emails');
+            this.responseSender('TeamCityNotifications', 'disconnected');
+        });
+    }
+        
+    private receivedEmailCallback(subject: string): void {
+        let matches = teamCityDeployRegexp.exec(subject);
+        if (matches !== null && matches.length === 3) {
+            return;
+        }
+
+        matches = teamCityBuildRegexp1.exec(subject);
+        if (matches === null || matches.length !== 5) {
+            matches = teamCityBuildRegexp2.exec(subject);
+            if (matches === null || matches.length !== 5) {
+                ApplicationLogger.logInfo(`Unexpected email subject: "${subject}"`);
+            }
+        }
+
+        let refreshRequired = false;
+        if (matches !== null && matches.length === 5) {
+            const serviceName = matches[2];
+            const reasonAndType = this.generateFailureReason(matches[3], matches[1]);
+
+            if (matches[1] === 'SUCCESSFUL' && matches[2] !== null) {
+                const count = failedBuilds.length;
+                failedBuilds = failedBuilds.filter(fb => fb.serviceName !== serviceName || fb.type !== reasonAndType[2]);
+                if (failedBuilds.length !== count) {
+                    refreshRequired = true;
+                }
+            } else if (matches[1] === 'FAILED' && matches[2] !== null) {
+                const failedBuild = {
+                    buildId: matches[4],
+                    buildName: matches[3],
+                    buildNumber: matches[4],
+                    displayName: `${serviceName}${matches[3] ? ` - ${matches[3]}` : ''}`,
+                    finishTime: new Date().getTime(),
+                    sequence: reasonAndType[1],
+                    serviceName,
+                    status: 'FAILED',
+                    type: reasonAndType[2]
+                } as TeamCityBuild;
+
+                if (!failedBuilds.find(fb => fb.serviceName === serviceName)) {
+                    failedBuilds.push(failedBuild);
+                    refreshRequired = true;
+                } else {
+                    failedBuilds = failedBuilds.filter(fb => fb.serviceName !== serviceName || fb.type !== reasonAndType[2]);
+                    failedBuilds.push(failedBuild);
+                    refreshRequired = true;
+                }
+            }
+        }
+
+        if (refreshRequired) {
+            unseenCount++;
+            failedBuilds = this.cleanFailedBuilds();
+            this.responseSender(BuildsActionsEnum.FailedBuildsResult, failedBuilds);
+            this.responseSender(BuildsActionsEnum.UnseenCountUpdated, unseenCount);
+        }
     }
 
     private filterFailedBuilds(json: any) {

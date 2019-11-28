@@ -9,7 +9,7 @@ import { DEPRECATED_PROJECTS, IGNORED_PROJECT_SUFFIXES } from './constants';
 import { ServerProjectsPersistence } from '../persistence/gitlabProjects';
 import { UserSettings } from '../userSettings';
 
-import { listenForEmails } from '../system/emailNotificationsListener';
+import { EmailNotificationsListener } from '../system/emailNotificationsListener';
 import { ProjectsActionsEnum } from '../../../renderer/actions';
 
 const PARALLEL_TASKS = 5;
@@ -25,6 +25,9 @@ interface ProjectOrSubProjectTaskResult {
 }
 
 export class GitLabProjects {
+    private responseSender!: (responseName: string, payload: any) => void;
+    private emailNotificationsListener!: EmailNotificationsListener;
+
     private static IsCommit(maybeCommit: any): maybeCommit is Commit {
         if (maybeCommit == null) {
             return false;
@@ -71,34 +74,51 @@ export class GitLabProjects {
     }
 
     public listenForPushEvents(responseSender: (responseName: string, payload: any) => void): void {
-        listenForEmails('gitlab.to.slack.bjss@gmail.com', 'zngieztvpcjshbyi', ['tooling.team@easyjet.com'], async (subject) => {
-            let matches = gitlabNewOrDeletedTagOrBranchRegexp.exec(subject);
-            if (matches !== null && matches.length === 2) {
-                return;
-            }
+        this.responseSender = responseSender;
 
-            matches = gitlabBranchPushRegexp.exec(subject);
-            if (matches !== null && matches.length === 2) {
-                return;
-            }
+        this.emailNotificationsListener = new EmailNotificationsListener(
+            'gitlab.to.slack.bjss@gmail.com',
+            'zngieztvpcjshbyi',
+            ['tooling.team@easyjet.com'],
+            this.receivedEmailHandler);
 
-            matches = gitlabMasterPushRegexp.exec(subject);
-            if (matches !== null && matches.length === 3) {
-                const projectName = matches[1].replace('.Behaviour', '').replace('.Contract', '');
-                const project = this.currentProjects.find(p => p.name === projectName);
-                if (project) {
-                    const lastCommit = await this.getMostRecentCommit(project.id);
-                    if (lastCommit !== null && !(lastCommit instanceof Error)) {
-                        if (project.last_commit === null || project.last_commit.id !== lastCommit.id) {
-                            project.last_commit = lastCommit;
-                            responseSender(ProjectsActionsEnum.ReceiveSingleProject, project);
-                        }
+        this.emailNotificationsListener.on('connected', () => {
+            ApplicationLogger.logInfo('Connected to GitLab notification emails');
+            this.responseSender('GitLabNotifications', 'connected');
+        });
+        this.emailNotificationsListener.on('disconnected', () => {
+            ApplicationLogger.logInfo('Disconnected from GitLab notification emails');
+            this.responseSender('GitLabNotifications', 'disconnected');
+        });
+    }
+
+    private async receivedEmailHandler(subject: string) {
+        let matches = gitlabNewOrDeletedTagOrBranchRegexp.exec(subject);
+        if (matches !== null && matches.length === 2) {
+            return;
+        }
+
+        matches = gitlabBranchPushRegexp.exec(subject);
+        if (matches !== null && matches.length === 2) {
+            return;
+        }
+
+        matches = gitlabMasterPushRegexp.exec(subject);
+        if (matches !== null && matches.length === 3) {
+            const projectName = matches[1].replace('.Behaviour', '').replace('.Contract', '');
+            const project = this.currentProjects.find(p => p.name === projectName);
+            if (project) {
+                const lastCommit = await this.getMostRecentCommit(project.id);
+                if (lastCommit !== null && !(lastCommit instanceof Error)) {
+                    if (project.last_commit === null || project.last_commit.id !== lastCommit.id) {
+                        project.last_commit = lastCommit;
+                        this.responseSender(ProjectsActionsEnum.ReceiveSingleProject, project);
                     }
                 }
-            } else {
-                ApplicationLogger.logInfo(`Unexpected email subject: "${subject}"`);
             }
-        });
+        } else {
+            ApplicationLogger.logInfo(`Unexpected email subject: "${subject}"`);
+        }
     }
 
     private async downloadAllProjects(): Promise<Project[]> {

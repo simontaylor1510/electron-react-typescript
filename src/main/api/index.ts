@@ -264,6 +264,12 @@ export class Server {
                     this.updateOutOfDateProjects();
                 }
                 break;
+
+            case 'GitLabNotifications':
+                return;
+
+            case 'TeamCityNotifications':
+                return;
         }
 
         this.reactClient.send(responseName, responsePayload);

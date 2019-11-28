@@ -24,6 +24,11 @@ export class TeamCityFunctions {
 
         this.teamCityBuilds.listenForBuildEvents(this.responseSender);
 
+        this.teamCityBuilds.on('disconnected', () => {
+            ApplicationLogger.logInfo('Lost connection to TeamCity notification emails');
+            //this.responseSender('xxx', undefined);
+        });
+
         apiMethods.set(BuildsActionsEnum.RequestFailedBuilds, async (): Promise<[string, any]> => {
             try {
                 const failedBuilds = await this.teamCityBuilds.getFailedBuilds(userSettings.teamcityApiKey);
