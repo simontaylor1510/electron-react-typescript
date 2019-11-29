@@ -64,6 +64,15 @@ export class Server {
 
     private isOnline: boolean = true;
 
+    private isConnectedToEasyJet: boolean = false;
+
+    private onlineState = {
+        gitlab: false,
+        gitlabNotifications: false,
+        teamCity: false,
+        teamCityNotifications: false
+    }
+
     constructor(client: Electron.WebContents) {
         this.reactClient = client;
 
@@ -115,7 +124,7 @@ export class Server {
 
         this.performStartupActions([ProjectsActionsEnum.RequestAllLocalProjects]);
 
-        if (isOnline) {
+        if (this.isOnline || this.isConnectedToEasyJet) {
             this.goOnline();
         }
     }
@@ -265,14 +274,43 @@ export class Server {
                 }
                 break;
 
+            case BuildsActionsEnum.FailedBuildsResult:
+                this.onlineState.teamCity = true;
+                this.combineOnlineState();
+                break;
+
+            case BuildsActionsEnum.RequestFailedBuildsError:
+                this.onlineState.teamCity = false;
+                this.combineOnlineState();
+                break;
+
+            case ProjectsActionsEnum.ReceiveAllProjects:
+                this.onlineState.gitlab = true;
+                this.combineOnlineState();
+                break;
+
+            case ProjectsActionsEnum.RequestAllProjectsError:
+                this.onlineState.gitlab = false;
+                this.combineOnlineState();
+                break;
+
             case 'GitLabNotifications':
+                this.onlineState.gitlabNotifications = (responsePayload === 'connected');
+                this.combineOnlineState();
                 return;
 
             case 'TeamCityNotifications':
+                this.onlineState.teamCityNotifications = (responsePayload === 'connected');
+                this.combineOnlineState();
                 return;
         }
 
         this.reactClient.send(responseName, responsePayload);
+    }
+
+    private combineOnlineState(): void {
+        this.isOnline = this.onlineState.gitlab || this.onlineState.gitlabNotifications || this.onlineState.teamCity || this.onlineState.teamCityNotifications;
+        this.isConnectedToEasyJet = this.onlineState.gitlab || this.onlineState.teamCity;
     }
 
     private async updateOutOfDateProjects(): Promise<void> {
