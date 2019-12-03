@@ -10,9 +10,9 @@ import { BuildsActionsEnum } from '../../../renderer/actions';
 import { TeamCityApiClient } from './shared';
 
 // (STARTED) (Service.PassengerStandbyStatusUpdated.PerformanceTests) (Perf Test) (0.0.0-alpha)
-const teamCityBuildRegexp1 = /\[TeamCity, (.+)\] Build EJ\.AbstractionLayer :: .+ :: (.+) :: (.+) #(\S+)/;
-const teamCityBuildRegexp2 = /\[TeamCity, (.+)\] Build EJ\.AbstractionLayer :: .+ :: .+ :: (.+) :: (.+) #(\S+)/;
-const teamCityDeployRegexp = /\[TeamCity, (\S+)\] Build EJ\.AbstractionLayer :: \S+ :: Deploy \S+ #(\S+)/;
+const teamCityBuildRegexp1 = /\[TeamCity, (\S+)\] Build EJ\.ALTeam :: .+ :: (.+) :: (.+) #(\S+)/;
+const teamCityBuildRegexp2 = /\[TeamCity, (\S+)\] Build EJ\.ALTeam :: .+ :: .+ :: (.+) :: (.+) #(\S+)/;
+const teamCityDeployRegexp = /\[TeamCity, (\S+)\] Build EJ\.ALTeam :: \S+ :: Deploy \S+ #(\S+)/;
 
 let failedBuilds: TeamCityBuild[] = [];
 let unseenCount: number = 0;

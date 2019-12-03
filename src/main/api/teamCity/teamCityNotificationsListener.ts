@@ -3,8 +3,8 @@ import { RTMClient } from '@slack/client';
 import { ApplicationLogger } from '../../utils/logger';
 
 // (STARTED) (Service.PassengerStandbyStatusUpdated.PerformanceTests) (Perf Test) (0.0.0-alpha)
-const teamCityBuildRegexp1 = /\[TeamCity, (\S+)\] Build EJ\.AbstractionLayer :: \S+ :: (\S+) :: (.+) #(\S+)/;
-const teamCityBuildRegexp2 = /\[TeamCity, (\S+)\] Build EJ.AbstractionLayer :: \S+ :: \S+ :: (\S+) :: (.+) #(\S+)/;
+const teamCityBuildRegexp1 = /\[TeamCity, (\S+)\] Build EJ\.ALTeam :: \S+ :: (\S+) :: (.+) #(\S+)/;
+const teamCityBuildRegexp2 = /\[TeamCity, (\S+)\] Build EJ\.ALTeam :: \S+ :: \S+ :: (\S+) :: (.+) #(\S+)/;
 
 export class SlackMessageListener {
     private client: RTMClient;
