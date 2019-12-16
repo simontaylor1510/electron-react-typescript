@@ -10,5 +10,6 @@ export enum ApplicationActionsEnum {
     CloseTerminal = 'application/CLOSE_TERMINAL',
     ClosedTerminal = 'application/CLOSED_TERMINAL',
     SelectTerminal = 'application/SELECT_TERMINAL',
-    SelectedTerminal = 'application/SELECTED_TERMINAL'
+    SelectedTerminal = 'application/SELECTED_TERMINAL',
+    OnlineStateUpdated = 'application/ONLINE_STATE_UPDATED'
 }

@@ -1,3 +1,5 @@
+import { OnlineState } from "../onlineState";
+
 export interface ApplicationState {
     acknowledgedDeviceLockEvent: boolean;
     activeTabIndex: number;
@@ -5,6 +7,7 @@ export interface ApplicationState {
     isMonitoringLockEvents: boolean;
     isDeviceLocked: boolean;
     isWatchingForChanges: boolean;
+    onlineState: OnlineState;
     openTerminals: Map<string, number>;
     selectedRepo: string | null;
     selectedTerminal: number;

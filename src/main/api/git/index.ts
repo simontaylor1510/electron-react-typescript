@@ -37,7 +37,7 @@ export class GitFunctions {
 
         apiMethods.set(ProjectsActionsEnum.RequestAllLocalProjects, async (): Promise<[string, any]> => {
             if (firstTime) {
-                this.responseSender(ProjectsActionsEnum.ReceiveAllLocalProjects, Array.from(this.gitProjects.LocalProjects.values()));
+                this.responseSender(ProjectsActionsEnum.ReceiveStoredLocalProjects, Array.from(this.gitProjects.LocalProjects.values()));
                 firstTime = false;
             }
 
@@ -170,8 +170,7 @@ export class GitFunctions {
             async (payload: { directoryName: string, updateAll: boolean, background: boolean }): Promise<[string, any]> => {
                 await this.gitProjectsWatcher.SetDirectoryIgnoredState(payload.directoryName, true);
                 try {
-                    // const localProject = await this.gitProjects.UpdateRepository(payload.directoryName);
-                    const localProject = this.gitProjects.LocalProjects.get(payload.directoryName) || {} as LocalProject;
+                    const localProject = await this.gitProjects.UpdateRepository(payload.directoryName);
                     this.gitProjectsWatcher.LocalProjects = this.gitProjects.LocalProjects;
                     await this.gitProjectsWatcher.SetDirectoryIgnoredState(payload.directoryName, false);
 

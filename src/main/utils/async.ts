@@ -6,7 +6,8 @@ export async function asyncForEach(array: any[], callback: (item: any, index: nu
 
 export async function delay(delayPeriod: number) {
     return new Promise(function (resolve, _) {
-        setTimeout(function () {
+        const timeout = setTimeout(function () {
+            clearTimeout(timeout);
             resolve(delayPeriod);
         }, delayPeriod);
     });

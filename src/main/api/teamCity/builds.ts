@@ -45,7 +45,7 @@ export class TeamCityBuilds {
             'teamcity.to.slack.bjss@gmail.com',
             'bnikmcuwlnreqfyi',
             ['tooling.team@easyjet.com'],
-            this.receivedEmailCallback);
+            (subject) => this.receivedEmailCallback(subject));
 
         this.emailNotificationsListener.on('connected', () => {
             ApplicationLogger.logInfo('Connected to TeamCity notification emails');

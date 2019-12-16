@@ -1,4 +1,4 @@
-import { ApplicationState } from '../types';
+import { ApplicationState, OnlineState } from '../types';
 import { ApplicationActionsEnum } from '../actions/applicationEnums';
 import {
     ReceiveDeviceLockEventAction,
@@ -7,7 +7,8 @@ import {
     OpenedTerminalAction,
     SelectTerminalAction,
     CloseTerminalAction,
-    ClosedTerminalAction
+    ClosedTerminalAction,
+    OnlineStateUpdatedAction
 } from '../actions/application';
 
 const initialState: ApplicationState = {
@@ -20,7 +21,15 @@ const initialState: ApplicationState = {
     openTerminals: new Map<string, number>(),
     selectedRepo: null,
     selectedTerminal: -1,
-    terminalToOpen: null
+    terminalToOpen: null,
+    onlineState: {
+        gitlab: false,
+        gitlabNotifications: false,
+        isConnectedToEasyJet: false,
+        isOnline: true,
+        teamCity: false,
+        teamCityNotifications: false
+    } as OnlineState
 };
 
 export function application(state: ApplicationState = initialState, action: ApplicationActions) {
@@ -105,6 +114,13 @@ export function application(state: ApplicationState = initialState, action: Appl
                 ...state,
                 closingTerminal: null
             };
+
+        case ApplicationActionsEnum.OnlineStateUpdated:
+            return {
+                ...state,
+                onlineState: (action as OnlineStateUpdatedAction).onlineState
+            }
+            break;
         
         default:
             return state;

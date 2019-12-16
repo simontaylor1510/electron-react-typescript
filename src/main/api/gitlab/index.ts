@@ -27,7 +27,7 @@ export class GitLabFunctions {
 
         apiMethods.set(ProjectsActionsEnum.RequestAllProjects, async (): Promise<[string, any]> => {
             if (this.firstTime) {
-                this.responseSender(ProjectsActionsEnum.ReceiveAllProjects, this.gitLabProjects.currentProjects);
+                this.responseSender(ProjectsActionsEnum.ReceiveStoredProjects, this.gitLabProjects.currentProjects);
                 this.firstTime = false;
             }
             try {

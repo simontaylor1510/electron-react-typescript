@@ -10,12 +10,13 @@ import { ApplicationLogger } from '../utils/logger';
 import { LocalProjectsPersistence } from './persistence/localProjects';
 import { ServerProjectsPersistence } from './persistence/gitlabProjects';
 import { ProjectsActionsEnum } from '../../renderer/actions/projectEnums';
-import { IpcPayload, LocalProject, Project } from '../../renderer/types';
+import { IpcPayload, LocalProject, Project, OnlineState } from '../../renderer/types';
 import { LocalProjectStatusResult } from '../../renderer/types/localProjectStatus';
 import { UserSettings } from './userSettings';
 import { ApplicationActionsEnum, BuildsActionsEnum, SettingsActionsEnum } from '../../renderer/actions';
 import { AppSettings } from '../../renderer/types/appSettings';
 import { AppSettingsPersistence } from './persistence/settings';
+import { delay } from '../utils/async'
 // import { NuGetPackageSourceFunctions } from './localNuGetPackageSource';
 
 export class Server {
@@ -58,6 +59,8 @@ export class Server {
 
     private toUpdate: LocalProject[] = [];
 
+    private toClone: Project[] = [];
+
     private remoteProjects: Project[] = [];
 
     private isLocked: boolean = false;
@@ -69,9 +72,11 @@ export class Server {
     private onlineState = {
         gitlab: false,
         gitlabNotifications: false,
+        isOnline: true,
+        isConnectedToEasyJet: false,
         teamCity: false,
         teamCityNotifications: false
-    }
+    } as OnlineState;
 
     constructor(client: Electron.WebContents) {
         this.reactClient = client;
@@ -123,6 +128,8 @@ export class Server {
         this.reactClient.send(SettingsActionsEnum.SettingsLoaded, this.appSettings);
 
         this.performStartupActions([ProjectsActionsEnum.RequestAllLocalProjects]);
+
+        this.updateOutOfDateProjects();
 
         if (this.isOnline || this.isConnectedToEasyJet) {
             this.goOnline();
@@ -225,35 +232,16 @@ export class Server {
     private async sendAndLogResponse(responseName: string, responsePayload: any): Promise<void> {
         switch (responseName) {
             case ProjectsActionsEnum.LocalProjectStatus:
-                const localProjectStatusResult = responsePayload as LocalProjectStatusResult;
-                if (localProjectStatusResult !== null && localProjectStatusResult.localProject !== null) {
-                    const localProjectName = localProjectStatusResult.localProject.name;
-                    if (this.gitLabFunctions) {
-                        const projects = this.gitLabFunctions.allProjects.filter(p => p.name === localProjectName);
-                        if (projects.length > 0 && projects[0].id) {
-                            const lastCommit = await this.gitLabFunctions.getMostRecentCommit(projects[0].id);
-                            if (lastCommit != null) {
-                                localProjectStatusResult.localProject.lastServerCommit = lastCommit;
+                this.updateLastCommit(responseName, responsePayload);
+                break;
 
-                                let project = null;
-                                if (this.gitLabFunctions) {
-                                    project = this.gitLabFunctions.updateLastCommitForProject(projects[0].id, lastCommit);
-                                }
+            case ProjectsActionsEnum.ReceiveSingleProject:
+                this.toUpdate.push(responsePayload as LocalProject);
+                break;
 
-                                if (project !== null) {
-                                    this.reactClient.send(ProjectsActionsEnum.ReceiveSingleProject, project);
-                                }
-                            }
-                        } else {
-                            ApplicationLogger.logError(`Unable to use gitLabFunctions for response ${responseName}`, null);
-                        }
-                    }
-                    if (this.gitFunctions) {
-                        await this.gitFunctions.updateLocalProjects();
-                    } else {
-                        ApplicationLogger.logError(`Unable send response ${responseName}`, null);
-                    }
-                }
+            case ProjectsActionsEnum.ReceiveStoredLocalProjects:
+                this.localProjects = responsePayload as LocalProject[];
+                responseName = ProjectsActionsEnum.ReceiveAllLocalProjects;
                 break;
 
             case ProjectsActionsEnum.ReceiveAllLocalProjects:
@@ -261,17 +249,21 @@ export class Server {
                 this.mergeLocalAndRemoteProjects();
                 break;
 
+            case ProjectsActionsEnum.ReceiveStoredProjects:
+                this.remoteProjects = responsePayload as Project[];
+                responseName = ProjectsActionsEnum.ReceiveAllProjects;
+                break;
+
             case ProjectsActionsEnum.ReceiveAllProjects:
                 this.remoteProjects = responsePayload as Project[];
+                this.onlineState.gitlab = true;
+                this.combineOnlineState();
                 this.mergeLocalAndRemoteProjects();
                 break;
 
             case ApplicationActionsEnum.ReceiveDeviceLockEvent:
                 ApplicationLogger.logInfo(`Device ${responsePayload ? 'is' : 'is not'} locked`);
                 this.isLocked = responsePayload;
-                if (this.isLocked) {
-                    this.updateOutOfDateProjects();
-                }
                 break;
 
             case BuildsActionsEnum.FailedBuildsResult:
@@ -281,11 +273,6 @@ export class Server {
 
             case BuildsActionsEnum.RequestFailedBuildsError:
                 this.onlineState.teamCity = false;
-                this.combineOnlineState();
-                break;
-
-            case ProjectsActionsEnum.ReceiveAllProjects:
-                this.onlineState.gitlab = true;
                 this.combineOnlineState();
                 break;
 
@@ -308,22 +295,67 @@ export class Server {
         this.reactClient.send(responseName, responsePayload);
     }
 
+    private async updateLastCommit(responseName: string, localProjectStatusResult: LocalProjectStatusResult): Promise<void> {
+        if (localProjectStatusResult !== null && localProjectStatusResult.localProject !== null) {
+            const localProjectName = localProjectStatusResult.localProject.name;
+
+            if (this.gitLabFunctions) {
+                const projects = this.gitLabFunctions.allProjects.filter(p => p.name === localProjectName);
+                if (projects.length > 0 && projects[0].id) {
+                    const lastCommit = await this.gitLabFunctions.getMostRecentCommit(projects[0].id);
+                    if (lastCommit != null) {
+                        localProjectStatusResult.localProject.lastServerCommit = lastCommit;
+
+                        let project = null;
+                        if (this.gitLabFunctions) {
+                            project = this.gitLabFunctions.updateLastCommitForProject(projects[0].id, lastCommit);
+                        }
+
+                        if (project !== null) {
+                            this.reactClient.send(ProjectsActionsEnum.ReceiveSingleProject, project);
+                        }
+                    }
+                } else {
+                    // tslint:disable-next-line: max-line-length
+                    ApplicationLogger.logError(`Unable to use gitLabFunctions for response ${responseName} with localProjectName ${localProjectName}`, null);
+                }
+            }
+
+            if (this.gitFunctions) {
+                await this.gitFunctions.updateLocalProjects();
+            } else {
+                ApplicationLogger.logError(`Unable to use gitFunctions for response ${responseName}`, null);
+            }
+        }
+    }
+
     private combineOnlineState(): void {
-        this.isOnline = this.onlineState.gitlab || this.onlineState.gitlabNotifications || this.onlineState.teamCity || this.onlineState.teamCityNotifications;
-        this.isConnectedToEasyJet = this.onlineState.gitlab || this.onlineState.teamCity;
+        this.onlineState.isOnline = this.onlineState.gitlab || this.onlineState.gitlabNotifications || this.onlineState.teamCity || this.onlineState.teamCityNotifications;
+        this.isOnline = this.onlineState.isOnline;
+        this.onlineState.isConnectedToEasyJet = this.onlineState.gitlab || this.onlineState.teamCity;
+        this.isConnectedToEasyJet = this.onlineState.isConnectedToEasyJet;
+        this.reactClient.send(ApplicationActionsEnum.OnlineStateUpdated, this.onlineState);
     }
 
     private async updateOutOfDateProjects(): Promise<void> {
         const method = this.apiMethods.get(ProjectsActionsEnum.UpdateLocalProject);
 
-        if (method) {
-            while (this.toUpdate.length !== 0 && this.isLocked) {
-                const localProject = this.toUpdate.splice(0, 1)[0];
-                ApplicationLogger.logInfo(`Updating ${localProject.name}`);
-                //await method({ directoryName: localProject.name, updateAll: false, background: false });
-                ApplicationLogger.logInfo(`Updated ${localProject.name}`);
+        while (method && true) {
+            if (this.onlineState.isConnectedToEasyJet && this.isLocked) {
+                var done = 0;
+
+                while (this.onlineState.isConnectedToEasyJet && this.toUpdate.length !== 0) {
+                    const localProject = this.toUpdate.splice(0, 1)[0];
+                    await method({ directoryName: localProject.name, updateAll: false, background: false });
+                    done++;
+                }
+
+                if (done > 0 || this.toUpdate.length > 0) {
+                    ApplicationLogger.logInfo(`Updated ${done} projects, with ${this.toUpdate.length} still to do.`);
+                }
             }
-            ApplicationLogger.logInfo('All projects updated');
+
+            await delay(5000);
         }
     }
 
@@ -349,5 +381,16 @@ export class Server {
         });
 
         ApplicationLogger.logInfo(`There are ${this.toUpdate.length} projects that need to be updated`);
+
+        this.toClone = [];
+
+        this.remoteProjects.forEach(remoteProject => {
+            const localProject = this.localProjects.find(localProject => localProject.name === remoteProject.name);
+            if (!localProject) {
+                this.toClone.push(remoteProject);
+            }
+        });
+
+        ApplicationLogger.logInfo(`There are ${this.toClone.length} projects that need to be cloned`);
     }
 }

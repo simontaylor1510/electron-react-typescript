@@ -45,6 +45,8 @@ export { UpdatedSettings } from './updatedSettings';
 
 export { NuGetPackageDetails } from './nuGetPackageDetails';
 
+export { OnlineState } from './onlineState';
+
 export interface GlobalState {
     application: ApplicationState;
     builds: BuildsState;

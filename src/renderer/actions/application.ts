@@ -3,6 +3,7 @@ import { Dispatch, Action } from 'redux';
 import { sendApiRequest, onApiResponse } from './apiClient';
 
 import { ApplicationActionsEnum } from './applicationEnums';
+import { OnlineState } from '../types';
 
 export interface MonitorDeviceLockEventsAction extends Action {
     readonly type: typeof ApplicationActionsEnum.MonitorDeviceLockEvents;
@@ -60,11 +61,17 @@ export interface ClosedTerminalAction extends Action {
     readonly id: string;
 }
 
+export interface OnlineStateUpdatedAction extends Action {
+    readonly type: typeof ApplicationActionsEnum.OnlineStateUpdated;
+    readonly onlineState: OnlineState;
+}
+
 export type ApplicationActions = ElectronReadyAction | WatchForProjectChangesAction |
     MonitorDeviceLockEventsAction | ReceiveDeviceLockEventAction | AcknowledgeDeviceLockEventAction |
     RepoSelectedAction | OpenTerminalAction | OpenedTerminalAction |
     SelectTerminalAction | SelectedTerminalAction |
-    CloseTerminalAction | ClosedTerminalAction;
+    CloseTerminalAction | ClosedTerminalAction |
+    OnlineStateUpdatedAction;
 
 function monitorDeviceLockEvents(): MonitorDeviceLockEventsAction {
     return {
@@ -112,12 +119,22 @@ function electronReady(): ElectronReadyAction {
     };
 }
 
+function onlineStateUpdated(onlineState: OnlineState): OnlineStateUpdatedAction {
+    return {
+        type: ApplicationActionsEnum.OnlineStateUpdated,
+        onlineState
+    };
+}
+
 export function configureApplicationActions(dispatch: Dispatch) {
     onApiResponse(ApplicationActionsEnum.ReceiveDeviceLockEvent, (isLocked: boolean) => {
         dispatch(receiveDeviceLockEvent(isLocked));
     });
     onApiResponse(ApplicationActionsEnum.ElectronReady, () => {
         dispatch(electronReady());
+    });
+    onApiResponse(ApplicationActionsEnum.OnlineStateUpdated, (onlineState: OnlineState) => {
+        dispatch(onlineStateUpdated(onlineState));
     });
 }
 

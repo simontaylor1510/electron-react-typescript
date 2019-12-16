@@ -80,7 +80,7 @@ export class GitLabProjects {
             'gitlab.to.slack.bjss@gmail.com',
             'zngieztvpcjshbyi',
             ['tooling.team@easyjet.com'],
-            this.receivedEmailHandler);
+            (subject) => this.receivedEmailHandler(subject));
 
         this.emailNotificationsListener.on('connected', () => {
             ApplicationLogger.logInfo('Connected to GitLab notification emails');
