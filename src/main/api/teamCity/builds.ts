@@ -56,7 +56,7 @@ export class TeamCityBuilds {
             this.responseSender('TeamCityNotifications', 'disconnected');
         });
     }
-        
+
     private receivedEmailCallback(subject: string): void {
         let matches = teamCityDeployRegexp.exec(subject);
         if (matches !== null && matches.length === 3) {
@@ -64,6 +64,13 @@ export class TeamCityBuilds {
         }
 
         matches = teamCityBuildRegexp1.exec(subject);
+
+        ApplicationLogger.logInfo(`Received: '${subject}'`);
+        if (matches !== null) {
+            const reasonAndType = this.generateFailureReason(matches[3], matches[1]);
+            ApplicationLogger.logInfo(`${matches[2]} ${matches[1]} ${matches[3]} (${reasonAndType})`)
+        }
+
         if (matches === null || matches.length !== 5) {
             matches = teamCityBuildRegexp2.exec(subject);
             if (matches === null || matches.length !== 5) {
