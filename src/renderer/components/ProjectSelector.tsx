@@ -7,7 +7,8 @@ import {
     Selection,
     SelectionMode,
     IColumn,
-    DetailsListLayoutMode
+    DetailsListLayoutMode,
+    IGroup
 } from 'office-ui-fabric-react/lib/DetailsList';
 import { Autocomplete, ISuggestionItem } from './Autocomplete';
 import { ProjectSelectorProps, Project } from '../types';
@@ -41,6 +42,29 @@ export class ProjectSelector extends React.Component<ProjectSelectorProps, IProj
             fieldName: 'details',
             key: 'col2'
         } as IColumn
+    ];
+    private _groups: IGroup[] = [
+        {
+            key: 'OpenWindows',
+            count: this._items.length,
+            startIndex: 0,
+            isCollapsed: false,
+            name: 'Open Terminal Windows'
+        } as IGroup,
+        {
+            key: 'ReposWithChanges',
+            count: 0,
+            startIndex: this._items.length,
+            name: 'Repositories with remote changes',
+            isCollapsed: true,
+        } as IGroup,
+        {
+            key: 'NewRepos',
+            count: 0,
+            startIndex: this._items.length,
+            name: 'NEW Repositories',
+            isCollapsed: true,
+        } as IGroup
     ];
 
     constructor(props: ProjectSelectorProps) {
@@ -87,6 +111,7 @@ export class ProjectSelector extends React.Component<ProjectSelectorProps, IProj
                     items={this._items}
                     compact={true}
                     columns={this._columns}
+                    groups={this._groups}
                     selectionMode={SelectionMode.single}
                     getKey={this._getKey}
                     setKey='single'
@@ -100,14 +125,52 @@ export class ProjectSelector extends React.Component<ProjectSelectorProps, IProj
     }
 
     private updateItems(): void {
-        const items: IDocument[] = [];
+        let items: IDocument[] = [];
 
-        this.props.openTerminals.forEach((value, key) => {
+        this.props.openTerminals.forEach((_, key) => {
             items.push({
                 key,
                 project: key
             } as IDocument);
-        })
+        });
+        this.props.dirtyProjects
+            .filter(lp => !this.props.openTerminals.has(lp.name))
+            .forEach((p) => {
+                items.push({
+                    key: p.name,
+                    project: p.name
+                } as IDocument);
+            });
+        items = items.sort((lp1, lp2) => lp1.key.localeCompare(lp2.key));
+
+        this._groups[0].count = items.length;
+        this._groups[0].startIndex = 0;
+
+        this._groups[1].startIndex = items.length;
+        var reposWithChangesCount = 0;
+        this.props.outOfDateProjects
+            .sort((lp1, lp2) => lp1.name.localeCompare(lp2.name))
+            .forEach((lp) => {
+                items.push({
+                    key: lp.name,
+                    project: lp.name
+                } as IDocument);
+            reposWithChangesCount++;
+        });
+        this._groups[1].count = reposWithChangesCount;
+
+        this._groups[2].startIndex = items.length;
+        var newReposCount = 0;
+        this.props.newProjects
+            .sort((lp1, lp2) => lp1.name.localeCompare(lp2.name))
+            .forEach((p) => {
+                items.push({
+                    key: p.name,
+                    project: p.name
+                } as IDocument);
+            newReposCount++;
+        });
+        this._groups[2].count = newReposCount;
 
         this._items = items;
     }

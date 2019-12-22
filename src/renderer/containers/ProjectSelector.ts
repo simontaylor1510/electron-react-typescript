@@ -9,7 +9,10 @@ export function mapStateToProps(state: GlobalState, _: Dispatch) {
     return {
         allProjects: state.projects.allProjects,
         allLocalProjects: state.projects.allLocalProjects,
-        openTerminals: state.application.openTerminals
+        dirtyProjects: state.projects.dirtyProjects.dirtyProjects,
+        newProjects: state.projects.newProjects.newProjects,
+        openTerminals: state.application.openTerminals,
+        outOfDateProjects: state.projects.outOfDateProjects.outOfDateProjects
     } as ProjectSelectorProps;
 }
 

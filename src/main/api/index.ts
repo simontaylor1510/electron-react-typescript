@@ -338,24 +338,40 @@ export class Server {
     }
 
     private async updateOutOfDateProjects(): Promise<void> {
-        const method = this.apiMethods.get(ProjectsActionsEnum.UpdateLocalProject);
+        const updateMethod = this.apiMethods.get(ProjectsActionsEnum.UpdateLocalProject);
+        const checkoutMethod = this.apiMethods.get(ProjectsActionsEnum.CheckoutLocalProject);
 
-        while (method && true) {
+        var updating = true;
+        while (updateMethod && checkoutMethod && true) {
             if (this.onlineState.isConnectedToEasyJet && this.isLocked) {
-                var done = 0;
+                var updated = 0;
+                var cloned = 0;
 
-                while (this.onlineState.isConnectedToEasyJet && this.toUpdate.length !== 0) {
-                    const localProject = this.toUpdate.splice(0, 1)[0];
-                    await method({ directoryName: localProject.name, updateAll: false, background: false });
-                    done++;
+                if (this.onlineState.isConnectedToEasyJet && updating && this.toUpdate.length !== 0) {
+                    this.toUpdate.splice(0, 1)[0];
+                    // const localProject = this.toUpdate.splice(0, 1)[0];
+                    // await method({ directoryName: localProject.name, updateAll: false, background: false });
+                    updated++;
+                    updating = !updating;
+                } else if (this.onlineState.isConnectedToEasyJet && !updating && this.toClone.length !== 0) {
+                    this.toClone.splice(0, 1)[0];
+                    // const localProject = this.toClone.splice(0, 1)[0];
+                    // await checkoutMethod({ directoryName: localProject.name, checkoutAll: false, background: false });
+                    cloned++;
+                    updating = !updating;
                 }
 
-                if (done > 0 || this.toUpdate.length > 0) {
-                    ApplicationLogger.logInfo(`Updated ${done} projects, with ${this.toUpdate.length} still to do.`);
+                if (updated > 0 || this.toUpdate.length > 0) {
+                    ApplicationLogger.logInfo(`Updated ${updated} projects, with ${this.toUpdate.length} still to do.`);
+                }
+                if (cloned > 0 || this.toClone.length > 0) {
+                    ApplicationLogger.logInfo(`Cloned ${cloned} projects, with ${this.toClone.length} still to do.`);
                 }
             }
 
-            await delay(5000);
+            if (!this.isLocked) {
+                await delay(10000);
+            }
         }
     }
 
